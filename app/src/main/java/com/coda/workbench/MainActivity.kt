@@ -43,8 +43,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -52,6 +52,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -750,7 +751,7 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
             dismissButton = { TextButton(onClick = { reportEdit = false }, enabled = !state.saving) { Text("取消") } },
         )
     }
-    if (state.finishDialog) FinishDialog(state.saving, viewModel)
+    if (state.finishDialog) FinishSheet(state.saving, viewModel)
     voidLogId?.let { logId ->
         AlertDialog(
             onDismissRequest = { if (!state.saving) voidLogId = null },
@@ -789,46 +790,55 @@ private fun DetailField(label: String, value: String, onChange: (String) -> Unit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FinishDialog(saving: Boolean, viewModel: FaultDetailViewModel) {
+private fun FinishSheet(saving: Boolean, viewModel: FaultDetailViewModel) {
     var result by remember { mutableStateOf<RestoreResult?>(null) }
     var verification by remember { mutableStateOf("") }
     var nextAction by remember { mutableStateOf("") }
     var dueText by remember { mutableStateOf("") }
-    var resultExpanded by remember { mutableStateOf(false) }
-    var dueKindExpanded by remember { mutableStateOf(false) }
     var dueKind by remember { mutableStateOf<HandoverDueKind?>(null) }
     val needsFollowUp = result != null && result != RestoreResult.RESTORED
-    AlertDialog(
-        onDismissRequest = { if (!saving) viewModel.hideFinishDialog() },
-        title = { Text("结束本次处理") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ExposedDropdownMenuBox(expanded = resultExpanded, onExpandedChange = { resultExpanded = !resultExpanded }) {
-                    OutlinedTextField(value = result?.let(::restoreLabel).orEmpty(), onValueChange = {}, readOnly = true, label = { Text("恢复结果*") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(resultExpanded) }, modifier = Modifier.menuAnchor().fillMaxWidth())
-                    DropdownMenu(expanded = resultExpanded, onDismissRequest = { resultExpanded = false }) {
-                        RestoreResult.values().forEach { option -> DropdownMenuItem(text = { Text(restoreLabel(option)) }, onClick = { result = option; dueKind = if (option == RestoreResult.RESTORED) HandoverDueKind.NONE else null; resultExpanded = false }) }
-                    }
-                }
-                OutlinedTextField(verification, { verification = it }, Modifier.fillMaxWidth(), label = { Text("验证结果（选填）") })
-                if (needsFollowUp) {
-                    OutlinedTextField(nextAction, { nextAction = it }, Modifier.fillMaxWidth(), label = { Text("下一步动作*") })
-                    ExposedDropdownMenuBox(expanded = dueKindExpanded, onExpandedChange = { dueKindExpanded = !dueKindExpanded }) {
-                        OutlinedTextField(value = dueKind?.let(::dueKindLabel).orEmpty(), onValueChange = {}, readOnly = true, label = { Text("跟进期限类型*") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(dueKindExpanded) }, modifier = Modifier.menuAnchor().fillMaxWidth())
-                        DropdownMenu(expanded = dueKindExpanded, onDismissRequest = { dueKindExpanded = false }) {
-                            listOf(HandoverDueKind.NONE, HandoverDueKind.END_OF_TODAY, HandoverDueKind.NEXT_SHIFT, HandoverDueKind.SPECIFIC).forEach { option -> DropdownMenuItem(text = { Text(dueKindLabel(option)) }, onClick = { dueKind = option; dueKindExpanded = false }) }
-                        }
-                    }
-                    if (dueKind == HandoverDueKind.SPECIFIC) OutlinedTextField(dueText, { dueText = it }, Modifier.fillMaxWidth(), label = { Text("具体期限*（yyyy-MM-dd）") })
+    val dueAt = if (dueKind == HandoverDueKind.SPECIFIC) runCatching { java.time.LocalDate.parse(dueText).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() }.getOrNull() else null
+    val canConfirm = !saving && result != null && (!needsFollowUp || (nextAction.isNotBlank() && dueKind != null && (dueKind != HandoverDueKind.SPECIFIC || dueAt != null)))
+    ModalBottomSheet(onDismissRequest = { if (!saving) viewModel.hideFinishDialog() }) {
+        Column(
+            Modifier.padding(horizontal = 16.dp).verticalScroll(rememberScrollState()).navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("结束本次处理", style = MaterialTheme.typography.titleMedium)
+            Text("恢复结果*", style = MaterialTheme.typography.labelLarge)
+            RestoreResult.values().forEach { option ->
+                Row(
+                    Modifier.fillMaxWidth().clickable(enabled = !saving) {
+                        result = option
+                        dueKind = if (option == RestoreResult.RESTORED) HandoverDueKind.NONE else null
+                    },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(selected = result == option, onClick = null)
+                    Text(restoreLabel(option), style = MaterialTheme.typography.bodyLarge)
                 }
             }
-        },
-        confirmButton = {
-            val dueAt = if (dueKind == HandoverDueKind.SPECIFIC) runCatching { java.time.LocalDate.parse(dueText).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() }.getOrNull() else null
-            val canConfirm = !saving && result != null && (!needsFollowUp || (nextAction.isNotBlank() && dueKind != null && (dueKind != HandoverDueKind.SPECIFIC || dueAt != null)))
-            Button(onClick = { result?.let { viewModel.finish(it, verification.ifBlank { null }, nextAction.ifBlank { null }, dueAt, dueKind ?: HandoverDueKind.NONE) } }, enabled = canConfirm) { Text(if (saving) "保存中…" else "确认结束") }
-        },
-        dismissButton = { TextButton(onClick = viewModel::hideFinishDialog, enabled = !saving) { Text("取消") } },
-    )
+            OutlinedTextField(verification, { verification = it }, Modifier.fillMaxWidth(), label = { Text("验证结果（选填）") })
+            if (needsFollowUp) {
+                OutlinedTextField(nextAction, { nextAction = it }, Modifier.fillMaxWidth(), label = { Text("下一步动作*") })
+                Text("跟进期限类型*", style = MaterialTheme.typography.labelLarge)
+                listOf(HandoverDueKind.NONE, HandoverDueKind.END_OF_TODAY, HandoverDueKind.NEXT_SHIFT, HandoverDueKind.SPECIFIC).forEach { option ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable(enabled = !saving) { dueKind = option },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = dueKind == option, onClick = null)
+                        Text(dueKindLabel(option), style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+                if (dueKind == HandoverDueKind.SPECIFIC) OutlinedTextField(dueText, { dueText = it }, Modifier.fillMaxWidth(), label = { Text("具体期限*（yyyy-MM-dd）") })
+            }
+            Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = viewModel::hideFinishDialog, enabled = !saving, modifier = Modifier.weight(1f)) { Text("取消") }
+                Button(onClick = { result?.let { viewModel.finish(it, verification.ifBlank { null }, nextAction.ifBlank { null }, dueAt, dueKind ?: HandoverDueKind.NONE) } }, enabled = canConfirm, modifier = Modifier.weight(1f)) { Text(if (saving) "保存中…" else "确认结束") }
+            }
+        }
+    }
 }
 
 @Composable
