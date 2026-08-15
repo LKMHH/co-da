@@ -74,6 +74,8 @@ import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import com.coda.workbench.core.usecase.RestoreResult
 import com.coda.workbench.core.usecase.HandoverDueKind
+import com.coda.workbench.core.usecase.BackupUseCase
+import com.coda.workbench.core.usecase.RestoreRecoveryState
 import com.coda.workbench.data.local.FaultProcessingEntity
 import com.coda.workbench.data.repository.HomeWorkView
 import com.coda.workbench.platform.NotificationChannels
@@ -87,12 +89,14 @@ import com.coda.workbench.ui.home.HomeUiState
 import com.coda.workbench.ui.home.HomeViewModel
 import com.coda.workbench.ui.schedule.MonthScheduleScreen
 import com.coda.workbench.ui.search.SearchScreen
+import com.coda.workbench.ui.settings.BackupScreen
 import com.coda.workbench.ui.settings.DeviceViewModel
 import com.coda.workbench.ui.settings.NotificationSettingsScreen
 import com.coda.workbench.ui.work.ManualWorkViewModel
 import com.coda.workbench.ui.work.WorkLogDetailViewModel
 import com.coda.workbench.ui.theme.CodaTheme
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -105,11 +109,30 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var notificationScheduler: NotificationScheduler
 
+    @Inject
+    lateinit var backupUseCase: BackupUseCase
+
+    private val restoreRecovery = MutableStateFlow<RestoreRecoveryState?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         NotificationChannels.ensure(this)
         lifecycleScope.launch { runCatching { notificationScheduler.reconcileAll() } }
-        setContent { CodaTheme { CodaApp() } }
+        lifecycleScope.launch {
+            // M7：启动看到 PREPARED 一律按安全备份回滚，之后提示恢复中断（不区分事务此前是否提交）
+            restoreRecovery.value = runCatching { backupUseCase.recoverInterruptedRestore() }
+                .getOrNull()
+                ?.takeIf { it.interrupted }
+        }
+        setContent {
+            val recovery by restoreRecovery.collectAsStateWithLifecycle()
+            CodaTheme {
+                CodaApp(
+                    restoreRecovery = recovery,
+                    onInterruptAcknowledged = { restoreRecovery.value = null },
+                )
+            }
+        }
     }
 }
 
@@ -132,11 +155,15 @@ private sealed interface AppRoute {
     data object Attendance : AppRoute
     data object MonthSchedule : AppRoute
     data object NotificationSettings : AppRoute
+    data object Backup : AppRoute
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CodaApp() {
+private fun CodaApp(
+    restoreRecovery: RestoreRecoveryState?,
+    onInterruptAcknowledged: () -> Unit,
+) {
     var backStack by remember { mutableStateOf(listOf<AppRoute>()) }
     var route by remember { mutableStateOf<AppRoute>(AppRoute.Home) }
     fun navigate(to: AppRoute) {
@@ -166,6 +193,7 @@ private fun CodaApp() {
         AppRoute.Attendance -> "当前出勤"
         AppRoute.MonthSchedule -> "本月排班"
         AppRoute.NotificationSettings -> "通知设置"
+        AppRoute.Backup -> "备份与恢复"
     }
     BackHandler(enabled = route != AppRoute.Home) { goBack() }
     Scaffold(
@@ -236,6 +264,7 @@ private fun CodaApp() {
                 onAttendance = { navigate(AppRoute.Attendance) },
                 onDevices = { navigate(AppRoute.DeviceList) },
                 onNotifications = { navigate(AppRoute.NotificationSettings) },
+                onBackup = { navigate(AppRoute.Backup) },
             )
             is AppRoute.HandoverDetail -> HandoverDetailScreen(
                 Modifier.padding(padding),
@@ -272,7 +301,35 @@ private fun CodaApp() {
             )
             AppRoute.MonthSchedule -> MonthScheduleScreen(Modifier.padding(padding))
             AppRoute.NotificationSettings -> NotificationSettingsScreen(Modifier.padding(padding))
+            AppRoute.Backup -> BackupScreen(Modifier.padding(padding))
         }
+    }
+    restoreRecovery?.let { recovery ->
+        AlertDialog(
+            onDismissRequest = onInterruptAcknowledged,
+            title = { Text("恢复未完成") },
+            text = {
+                Text(
+                    if (recovery.rolledBack) {
+                        "检测到上次恢复在确认替换后中断。\n本机数据已回滚到恢复前的安全备份，原有记录未被清除。"
+                    } else {
+                        "检测到上次恢复中断，且未能自动回滚。\n请选择备份文件重新恢复本机数据。"
+                    },
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    onInterruptAcknowledged()
+                    navigate(AppRoute.Backup)
+                }) { Text("查看备份与恢复") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    onInterruptAcknowledged()
+                    if (!recovery.rolledBack) navigate(AppRoute.Backup)
+                }) { Text(if (recovery.rolledBack) "知道了" else "重新选择备份") }
+            },
+        )
     }
 }
 
@@ -997,8 +1054,8 @@ private fun SettingsScreen(
     onAttendance: () -> Unit,
     onDevices: () -> Unit,
     onNotifications: () -> Unit,
+    onBackup: () -> Unit,
 ) {
-    var backupDialog by remember { mutableStateOf(false) }
     var aboutDialog by remember { mutableStateOf(false) }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         SettingGroup("工作")
@@ -1006,18 +1063,10 @@ private fun SettingsScreen(
         SettingGroup("提醒")
         SettingRow("通知设置", "到期提醒与排班提示", onClick = onNotifications)
         SettingGroup("数据")
-        SettingRow("备份与恢复", "", onClick = { backupDialog = true })
+        SettingRow("备份与恢复", "导出与替换恢复本机数据", onClick = onBackup)
         SettingRow("设备名称与别名", "", onClick = onDevices)
         SettingGroup("其他")
         SettingRow("关于 CODA", "", onClick = { aboutDialog = true })
-    }
-    if (backupDialog) {
-        AlertDialog(
-            onDismissRequest = { backupDialog = false },
-            title = { Text("备份与恢复") },
-            text = { Text("备份与恢复功能将在里程碑 M7 开放") },
-            confirmButton = { TextButton(onClick = { backupDialog = false }) { Text("知道了") } },
-        )
     }
     if (aboutDialog) {
         AlertDialog(

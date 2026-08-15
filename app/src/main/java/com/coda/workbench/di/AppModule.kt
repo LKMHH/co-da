@@ -21,9 +21,12 @@ import com.coda.workbench.core.usecase.AttendanceQueryUseCase
 import com.coda.workbench.core.usecase.ShiftScheduleUseCase
 import com.coda.workbench.core.usecase.ShiftScheduleQueryUseCase
 import com.coda.workbench.core.usecase.SearchUseCase
+import com.coda.workbench.core.usecase.BackupUseCase
+import com.coda.workbench.data.repository.BackupRepository
 import com.coda.workbench.data.repository.FaultDetailRepository
 import com.coda.workbench.data.repository.HomeRepository
 import com.coda.workbench.data.repository.SearchRepository
+import com.coda.workbench.platform.BackupFileStore
 import com.coda.workbench.platform.AlarmGateway
 import com.coda.workbench.platform.AndroidAlarmGateway
 import com.coda.workbench.platform.AndroidNotificationPoster
@@ -258,4 +261,31 @@ object AppModule {
     @Singleton
     fun provideSearchUseCase(repository: SearchRepository): SearchUseCase =
         SearchUseCase(repository)
+
+    // ---- M7 备份恢复 ----
+
+    @Provides
+    @Singleton
+    fun provideBackupFileStore(@ApplicationContext context: Context): BackupFileStore =
+        BackupFileStore(context)
+
+    @Provides
+    @Singleton
+    fun provideBackupRepository(database: CodaDatabase): BackupRepository =
+        BackupRepository(database)
+
+    @Provides
+    @Singleton
+    fun provideBackupUseCase(
+        repository: BackupRepository,
+        fileStore: BackupFileStore,
+        clock: Clock,
+        scheduler: NotificationScheduler,
+    ): BackupUseCase = BackupUseCase(
+        repository = repository,
+        fileStore = fileStore,
+        clock = clock,
+        appVersion = com.coda.workbench.BuildConfig.VERSION_NAME,
+        notificationTrigger = scheduler,
+    )
 }

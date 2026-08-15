@@ -38,6 +38,13 @@ interface DeviceDao {
             "OR device_alias.alias LIKE :term ESCAPE '\\' OR device_alias.normalizedAlias LIKE :term ESCAPE '\\'",
     )
     suspend fun idsMatching(term: String): List<String>
+
+    // ---- M7 备份恢复 ----
+    @Query("SELECT * FROM device")
+    suspend fun all(): List<DeviceEntity>
+
+    @Query("DELETE FROM device")
+    suspend fun clear()
 }
 
 @Dao
@@ -50,6 +57,13 @@ interface DeviceAliasDao {
 
     @Query("DELETE FROM device_alias WHERE deviceId = :deviceId AND alias = :alias")
     suspend fun deleteByValue(deviceId: String, alias: String)
+
+    // ---- M7 备份恢复 ----
+    @Query("SELECT * FROM device_alias")
+    suspend fun all(): List<DeviceAliasEntity>
+
+    @Query("DELETE FROM device_alias")
+    suspend fun clear()
 }
 
 @Dao
@@ -98,6 +112,14 @@ interface FaultRecordDao {
             "OR verification LIKE :term ESCAPE '\\'))",
     )
     suspend fun searchByTerm(term: String, aliasDeviceIds: List<String>, includeVoided: Boolean): List<FaultRecordEntity>
+
+    // ---- M7 备份恢复 ----
+    @Query("DELETE FROM fault_record")
+    suspend fun clear()
+
+    /** 备份用全量故障（含已作废；不加 ORDER BY 保持稳定顺序）。首页可见列表仍用 all()。 */
+    @Query("SELECT * FROM fault_record")
+    suspend fun allIncludingVoided(): List<FaultRecordEntity>
 }
 
 @Dao
@@ -161,6 +183,13 @@ interface FaultProcessingDao {
 
     @Query("UPDATE fault_processing SET voidedAt = :voidedAt, updatedAt = :updatedAt WHERE id = :processingId AND voidedAt IS NULL")
     suspend fun markVoided(processingId: String, voidedAt: Long, updatedAt: Long): Int
+
+    // ---- M7 备份恢复 ----
+    @Query("SELECT * FROM fault_processing")
+    suspend fun all(): List<FaultProcessingEntity>
+
+    @Query("DELETE FROM fault_processing")
+    suspend fun clear()
 }
 
 @Dao
@@ -242,6 +271,13 @@ interface WorkLogDao {
             "OR deviceNameSnapshot LIKE :term ESCAPE '\\' OR deviceId IN (:aliasDeviceIds))",
     )
     suspend fun searchByTerm(term: String, aliasDeviceIds: List<String>, includeVoided: Boolean): List<WorkLogEntity>
+
+    // ---- M7 备份恢复 ----
+    @Query("SELECT * FROM work_log")
+    suspend fun all(): List<WorkLogEntity>
+
+    @Query("DELETE FROM work_log")
+    suspend fun clear()
 }
 
 @Dao
@@ -317,6 +353,13 @@ interface HandoverItemDao {
             "OR potentialHazardNote LIKE :term ESCAPE '\\')",
     )
     suspend fun searchByTerm(term: String, includeVoided: Boolean): List<HandoverItemEntity>
+
+    // ---- M7 备份恢复 ----
+    @Query("SELECT * FROM handover_item")
+    suspend fun all(): List<HandoverItemEntity>
+
+    @Query("DELETE FROM handover_item")
+    suspend fun clear()
 }
 
 @Dao
@@ -368,6 +411,13 @@ interface AttendanceDao {
 
     @Query("SELECT * FROM attendance WHERE businessDate = :businessDate ORDER BY startAt ASC")
     fun observeForDate(businessDate: String): Flow<List<AttendanceEntity>>
+
+    // ---- M7 备份恢复 ----
+    @Query("SELECT * FROM attendance")
+    suspend fun all(): List<AttendanceEntity>
+
+    @Query("DELETE FROM attendance")
+    suspend fun clear()
 }
 
 @Dao
@@ -393,6 +443,13 @@ interface MonthlyShiftPlanDao {
         confirmedAt: Long,
         updatedAt: Long,
     )
+
+    // ---- M7 备份恢复 ----
+    @Query("SELECT * FROM monthly_shift_plan")
+    suspend fun all(): List<MonthlyShiftPlanEntity>
+
+    @Query("DELETE FROM monthly_shift_plan")
+    suspend fun clear()
 }
 
 @Dao
@@ -417,6 +474,13 @@ interface ShiftSlotDao {
     /** 按业务日 + 班别查班次（避免在 SQL 里直写 group 关键字列），班组匹配在 Kotlin 侧完成。 */
     @Query("SELECT * FROM shift_slot WHERE businessDate = :businessDate AND shiftType = :shiftType ORDER BY startAt ASC")
     suspend fun forDateAndType(businessDate: String, shiftType: String): List<ShiftSlotEntity>
+
+    // ---- M7 备份恢复 ----
+    @Query("SELECT * FROM shift_slot")
+    suspend fun all(): List<ShiftSlotEntity>
+
+    @Query("DELETE FROM shift_slot")
+    suspend fun clear()
 }
 
 @Dao
