@@ -15,6 +15,9 @@ interface DeviceDao {
     @Query("SELECT * FROM device WHERE id = :id")
     suspend fun findById(id: String): DeviceEntity?
 
+    @Query("SELECT * FROM device WHERE normalizedName = :normalizedName LIMIT 1")
+    suspend fun findByNormalizedName(normalizedName: String): DeviceEntity?
+
     @Query("SELECT * FROM device WHERE isActive = 1 ORDER BY normalizedName")
     fun observeActive(): Flow<List<DeviceEntity>>
 
@@ -229,7 +232,8 @@ interface WorkLogDao {
 
     @Query(
         "UPDATE work_log SET content = :content, workResult = :workResult, area = :area, " +
-            "arrangementSource = :arrangementSource, updatedAt = :updatedAt WHERE id = :id",
+            "arrangementSource = :arrangementSource, deviceId = :deviceId, deviceNameSnapshot = :deviceNameSnapshot, " +
+            "updatedAt = :updatedAt WHERE id = :id",
     )
     suspend fun updateManualFields(
         id: String,
@@ -237,6 +241,8 @@ interface WorkLogDao {
         workResult: String?,
         area: String?,
         arrangementSource: String?,
+        deviceId: String?,
+        deviceNameSnapshot: String?,
         updatedAt: Long,
     )
 

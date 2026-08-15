@@ -14,6 +14,8 @@ class DeviceUseCase(
 ) {
     fun observeAll(): Flow<List<DeviceEntity>> = database.deviceDao().observeAll()
 
+    fun observeRecent(): Flow<List<DeviceEntity>> = database.deviceDao().observeRecent()
+
     fun observeAliases(deviceId: String): Flow<List<DeviceAliasEntity>> =
         database.deviceAliasDao().observeForDevice(deviceId)
 

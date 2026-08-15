@@ -1,5 +1,6 @@
 package com.coda.workbench.core.usecase
 
+import com.coda.workbench.core.rules.TextRules
 import com.coda.workbench.data.local.CodaDatabase
 import com.coda.workbench.data.repository.AttendanceRepository
 import com.coda.workbench.data.repository.FaultDraftRepository
@@ -27,16 +28,21 @@ class ManualWorkUseCase(
         workResult: String?,
         area: String?,
         arrangementSource: String?,
+        deviceName: String?,
     ) {
         require(content.isNotBlank()) { "工作内容不能为空" }
         val log = database.workLogDao().findById(id) ?: error("工作记录不存在")
         check(log.kind == "MANUAL") { "派生记录不能直接编辑，请回到对应处理记录修正" }
+        val trimmedDevice = deviceName?.trim()?.takeIf { it.isNotEmpty() }
+        val matched = trimmedDevice?.let { database.deviceDao().findByNormalizedName(TextRules.normalize(it)) }
         database.workLogDao().updateManualFields(
             id = id,
             content = content.trim(),
             workResult = workResult?.trim()?.takeIf { it.isNotEmpty() },
             area = area?.trim()?.takeIf { it.isNotEmpty() },
             arrangementSource = arrangementSource?.trim()?.takeIf { it.isNotEmpty() },
+            deviceId = matched?.id,
+            deviceNameSnapshot = matched?.name ?: trimmedDevice,
             updatedAt = clock.millis(),
         )
     }

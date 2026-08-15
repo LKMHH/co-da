@@ -881,6 +881,14 @@ private fun ManualWorkScreen(modifier: Modifier, onSaved: (String) -> Unit, view
         TextButton(onClick = { extrasExpanded = !extrasExpanded }) { Text(if (extrasExpanded) "收起补充信息" else "补充信息 ›") }
         if (extrasExpanded) {
             OutlinedTextField(state.workResult, viewModel::setWorkResult, Modifier.fillMaxWidth(), label = { Text("工作结果") })
+            OutlinedTextField(state.deviceName, viewModel::setDeviceName, Modifier.fillMaxWidth(), label = { Text("设备名称") }, singleLine = true)
+            if (state.recentDevices.isNotEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    state.recentDevices.take(3).forEach { device ->
+                        FilterChip(selected = state.deviceName == device.name, onClick = { viewModel.setDeviceName(device.name) }, label = { Text(device.name) })
+                    }
+                }
+            }
             OutlinedTextField(state.area, viewModel::setArea, Modifier.fillMaxWidth(), label = { Text("区域") })
             OutlinedTextField(state.arrangementSource, viewModel::setArrangementSource, Modifier.fillMaxWidth(), label = { Text("安排来源") })
         }
@@ -1004,6 +1012,7 @@ private fun WorkLogDetailScreen(
             Text("内容：${log.content}")
             log.workResult?.takeIf { it.isNotBlank() }?.let { Text("工作结果：$it") }
             log.area?.takeIf { it.isNotBlank() }?.let { Text("区域：$it") }
+            log.deviceNameSnapshot?.takeIf { it.isNotBlank() }?.let { Text("设备：$it") }
             log.arrangementSource?.takeIf { it.isNotBlank() }?.let { Text("安排来源：$it") }
             log.attendanceKindSnapshot?.let { Text("出勤：${attendanceKindLabel(it)}") }
             log.restoreResult?.let { Text("恢复结果：${restoreLabel(RestoreResult.valueOf(it))}") }
@@ -1134,6 +1143,14 @@ private fun WorkLogEditScreen(modifier: Modifier, logId: String, onSaved: (Strin
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(state.content, viewModel::setContent, Modifier.fillMaxWidth().height(180.dp), label = { Text("工作内容*") }, minLines = 5)
         OutlinedTextField(state.workResult, viewModel::setWorkResult, Modifier.fillMaxWidth(), label = { Text("工作结果") })
+        OutlinedTextField(state.deviceName, viewModel::setDeviceName, Modifier.fillMaxWidth(), label = { Text("设备名称") }, singleLine = true)
+        if (state.recentDevices.isNotEmpty()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                state.recentDevices.take(3).forEach { device ->
+                    FilterChip(selected = state.deviceName == device.name, onClick = { viewModel.setDeviceName(device.name) }, label = { Text(device.name) })
+                }
+            }
+        }
         OutlinedTextField(state.area, viewModel::setArea, Modifier.fillMaxWidth(), label = { Text("区域") })
         OutlinedTextField(state.arrangementSource, viewModel::setArrangementSource, Modifier.fillMaxWidth(), label = { Text("安排来源") })
         OutlinedButton(onClick = viewModel::reSnapAttendance, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) { Text("出勤标记：按当前出勤修正快照") }
