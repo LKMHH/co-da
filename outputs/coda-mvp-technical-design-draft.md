@@ -272,6 +272,8 @@ startAt, endAt, isShiftChange, source, createdAt, updatedAt
 
 `attendance(isCurrent)` 使用部分唯一索引 `WHERE isCurrent = 1`，由同一个幂等入口在首次建库和相关 Migration 中创建，保证“当前出勤”不会同时指向多条记录。
 
+schema 事实来源（M8 收口）：`schemas/1.json` 仅包含 Room 注解声明的 DDL；`work_log` 的 CHECK 约束、`ux_*` 唯一/部分唯一索引与 `idx_attendance_current_start` 等回调索引由 `DatabaseSql.INDEX_DDL_STATEMENTS` 幂等回调（onCreate/onOpen）落地，不在 1.json 中。任何 Migration 必须重放该清单，否则这些约束与索引会随迁移丢失；守护测试见 §11.1。
+
 首版搜索采用规范化字段的 SQLite `LIKE` 查询，避免中文分词器带来的现场词汇误判；搜索范围只有本地文本和设备名/别名，数据量达到 10,000 条后再评估 FTS5。搜索实现封装在 `SearchRepository`，不让 UI 依赖具体索引方案。
 
 搜索参数必须先转义反斜杠、`%` 和 `_`，再使用绑定参数和 `ESCAPE '\\'` 执行包含匹配，避免用户输入通配符后扩大结果范围。
@@ -575,6 +577,7 @@ data.json
 - 搜索同义词和设备别名：`信号弱` 命中 `信号强度偏弱`，设备别名命中关联记录，扩展失败仍保留原文匹配。
 - 通知去重：同一事项到期一次、逾期同日最多一次、无期限不调度。
 - 备份 manifest、`deviceAliases` 数量、SHA-256、枚举/外键校验和重复导入替换。
+- schema 事实来源守护：`SchemaParityTest` 校验回调 DDL 幂等、必含唯一/部分唯一/覆盖索引，且 1.json 不重复持有回调 DDL（§3.3 口径）。
 
 ### 11.2 Room/集成测试
 

@@ -61,28 +61,32 @@ class CodaDatabaseCallback : RoomDatabase.Callback() {
 }
 
 object DatabaseSql {
-    fun ensureAutoHandoverIndex(db: SupportSQLiteDatabase) {
-        db.execSQL(
-            """
-            CREATE UNIQUE INDEX IF NOT EXISTS ux_handover_auto_source
-            ON handover_item(originType, sourceType, sourceId)
-            WHERE originType = 'AUTO_FAULT_PROCESSING'
-              AND sourceType IS NOT NULL
-              AND sourceId IS NOT NULL
-            """.trimIndent(),
-        )
-    }
+    /**
+     * 回调 DDL 清单（幂等，onCreate/onOpen 重放）。
+     * 部分唯一索引与 work_log 的 CHECK 约束无法用 Room 注解表达，
+     * 因此不进入 schemas/1.json；任何 Migration 必须重放本清单（技术稿 §3.3）。
+     */
+    val INDEX_DDL_STATEMENTS: List<String> = listOf(
+        "CREATE UNIQUE INDEX IF NOT EXISTS ux_work_log_source ON work_log(sourceType, sourceId)",
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_handover_auto_source
+        ON handover_item(originType, sourceType, sourceId)
+        WHERE originType = 'AUTO_FAULT_PROCESSING'
+          AND sourceType IS NOT NULL
+          AND sourceId IS NOT NULL
+        """.trimIndent(),
+        "CREATE UNIQUE INDEX IF NOT EXISTS ux_attendance_current ON attendance(isCurrent) WHERE isCurrent = 1",
+        "CREATE INDEX IF NOT EXISTS idx_fault_record_device_reported ON fault_record(deviceId, reportedAt DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_fault_processing_fault_created ON fault_processing(faultId, createdAt ASC)",
+        "CREATE INDEX IF NOT EXISTS idx_work_log_date_updated ON work_log(workDate, updatedAt DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_work_log_attendance_updated ON work_log(attendanceId, updatedAt DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_handover_status_due ON handover_item(status, dueAt)",
+        "CREATE INDEX IF NOT EXISTS idx_attendance_start_end ON attendance(startAt, endAt)",
+        "CREATE INDEX IF NOT EXISTS idx_attendance_current_start ON attendance(isCurrent, startAt DESC)",
+    )
 
     fun ensureSchemaIndexes(db: SupportSQLiteDatabase) {
-        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS ux_work_log_source ON work_log(sourceType, sourceId)")
-        ensureAutoHandoverIndex(db)
-        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS ux_attendance_current ON attendance(isCurrent) WHERE isCurrent = 1")
-        db.execSQL("CREATE INDEX IF NOT EXISTS idx_fault_record_device_reported ON fault_record(deviceId, reportedAt DESC)")
-        db.execSQL("CREATE INDEX IF NOT EXISTS idx_fault_processing_fault_created ON fault_processing(faultId, createdAt ASC)")
-        db.execSQL("CREATE INDEX IF NOT EXISTS idx_work_log_date_updated ON work_log(workDate, updatedAt DESC)")
-        db.execSQL("CREATE INDEX IF NOT EXISTS idx_work_log_attendance_updated ON work_log(attendanceId, updatedAt DESC)")
-        db.execSQL("CREATE INDEX IF NOT EXISTS idx_handover_status_due ON handover_item(status, dueAt)")
-        db.execSQL("CREATE INDEX IF NOT EXISTS idx_attendance_start_end ON attendance(startAt, endAt)")
+        INDEX_DDL_STATEMENTS.forEach { db.execSQL(it) }
     }
 
     fun recreateWorkLogWithCheck(db: SupportSQLiteDatabase) {
