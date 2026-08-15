@@ -8,11 +8,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -43,6 +46,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -522,7 +526,12 @@ private fun FaultEntryScreen(modifier: Modifier, onSaved: (String) -> Unit, view
     val formatter = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.SIMPLIFIED_CHINESE) }
     val zone = remember { ZoneId.systemDefault() }
     var reportText by remember(state.reportedAtMillis) { mutableStateOf(formatter.format(Instant.ofEpochMilli(state.reportedAtMillis).atZone(zone))) }
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    FormPage(
+        modifier,
+        bottomBar = {
+            Button(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = !state.saving && state.deviceName.isNotBlank() && state.symptom.isNotBlank(), modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存草稿") }
+        },
+    ) {
         Text("离开页面前会保存当前草稿", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         OutlinedTextField(state.deviceName, viewModel::setDeviceName, Modifier.fillMaxWidth(), label = { Text("设备名称*") }, singleLine = true)
         if (state.recentDevices.isNotEmpty()) {
@@ -543,7 +552,6 @@ private fun FaultEntryScreen(modifier: Modifier, onSaved: (String) -> Unit, view
         )
         OutlinedTextField(state.symptom, viewModel::setSymptom, Modifier.fillMaxWidth().height(132.dp), label = { Text("现象*") })
         state.error?.let { ErrorNotice(it) }
-        Button(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = !state.saving && state.deviceName.isNotBlank() && state.symptom.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(if (state.saving) "保存中…" else "保存草稿") }
     }
 }
 
@@ -869,7 +877,12 @@ private fun ManualWorkScreen(modifier: Modifier, onSaved: (String) -> Unit, view
     LaunchedEffect(Unit) { viewModel.reset(); content = "" }
     val todayLabel = remember { LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.SIMPLIFIED_CHINESE)) }
     val currentAttendance by viewModel.currentAttendance.collectAsStateWithLifecycle()
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    FormPage(
+        modifier,
+        bottomBar = {
+            Button(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = content.isNotBlank() && !state.saving, modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存工作记录") }
+        },
+    ) {
         Text(
             "$todayLabel · ${currentAttendance?.let { attendanceSummaryLabel(it) } ?: "普通班 08:00-18:00"}（自动带入）",
             style = MaterialTheme.typography.bodySmall,
@@ -897,7 +910,6 @@ private fun ManualWorkScreen(modifier: Modifier, onSaved: (String) -> Unit, view
             OutlinedTextField(state.arrangementSource, viewModel::setArrangementSource, Modifier.fillMaxWidth(), label = { Text("安排来源") })
         }
         state.error?.let { ErrorNotice(it) }
-        Button(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = content.isNotBlank() && !state.saving, modifier = Modifier.fillMaxWidth()) { Text(if (state.saving) "保存中…" else "保存工作记录") }
     }
 }
 
@@ -1121,7 +1133,12 @@ private fun HandoverCreateScreen(modifier: Modifier, onSaved: (String) -> Unit, 
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { viewModel.reset() }
     LaunchedEffect(state.savedId) { state.savedId?.let(onSaved) }
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    FormPage(
+        modifier,
+        bottomBar = {
+            Button(onClick = { scope.launch { viewModel.create() } }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存交接事项") }
+        },
+    ) {
         OutlinedTextField(state.summary, viewModel::setSummary, Modifier.fillMaxWidth(), label = { Text("事项摘要（选填）") })
         OutlinedTextField(state.nextAction, viewModel::setNextAction, Modifier.fillMaxWidth(), label = { Text("下一步动作*") })
         Text("跟进期限*", style = MaterialTheme.typography.labelLarge)
@@ -1141,7 +1158,6 @@ private fun HandoverCreateScreen(modifier: Modifier, onSaved: (String) -> Unit, 
         }
         OutlinedTextField(state.hazardNote, viewModel::setHazardNote, Modifier.fillMaxWidth(), label = { Text("可能隐患（选填）") })
         state.error?.let { ErrorNotice(it) }
-        Button(onClick = { scope.launch { viewModel.create() } }, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) { Text(if (state.saving) "保存中…" else "保存交接事项") }
     }
 }
 
@@ -1150,7 +1166,12 @@ private fun WorkLogEditScreen(modifier: Modifier, logId: String, onSaved: (Strin
     LaunchedEffect(logId) { viewModel.loadForEdit(logId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    FormPage(
+        modifier,
+        bottomBar = {
+            Button(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = state.content.isNotBlank() && !state.saving, modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存修改") }
+        },
+    ) {
         OutlinedTextField(state.workDate, viewModel::setWorkDate, Modifier.fillMaxWidth(), label = { Text("工作日期*（yyyy-MM-dd）") }, singleLine = true)
         OutlinedTextField(state.content, viewModel::setContent, Modifier.fillMaxWidth().height(180.dp), label = { Text("工作内容*") }, minLines = 5)
         OutlinedTextField(state.workResult, viewModel::setWorkResult, Modifier.fillMaxWidth(), label = { Text("工作结果") })
@@ -1166,7 +1187,6 @@ private fun WorkLogEditScreen(modifier: Modifier, logId: String, onSaved: (Strin
         OutlinedTextField(state.arrangementSource, viewModel::setArrangementSource, Modifier.fillMaxWidth(), label = { Text("安排来源") })
         OutlinedButton(onClick = viewModel::reSnapAttendance, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) { Text("出勤标记：按当前出勤修正快照") }
         state.error?.let { ErrorNotice(it) }
-        Button(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = state.content.isNotBlank() && !state.saving, modifier = Modifier.fillMaxWidth()) { Text(if (state.saving) "保存中…" else "保存修改") }
     }
 }
 
@@ -1263,6 +1283,38 @@ private fun statusColor(label: String): Color = when {
 }
 @Composable private fun EmptyNotice(text: String) { Text(text, Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
 @Composable private fun ErrorNotice(text: String) { Text(text, color = MaterialTheme.colorScheme.error) }
+
+/**
+ * 表单页骨架（视觉稿 §1.3）：上方滚动内容 + 固定底部操作区（surface.content + 1dp 顶分隔线 + 含安全区）；
+ * bottomBar 为 null 时不渲染底部操作区（只读页）。
+ */
+@Composable
+private fun FormPage(
+    modifier: Modifier = Modifier,
+    bottomBar: (@Composable RowScope.() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
+        if (bottomBar != null) {
+            Surface(color = MaterialTheme.colorScheme.surface) {
+                Column {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).navigationBarsPadding(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        content = bottomBar,
+                    )
+                }
+            }
+        }
+    }
+}
 
 private fun lifecycleLabel(status: String): String = when (status) { "OPEN" -> "处理中"; "CLOSED" -> "已结束"; "VOIDED" -> "已作废"; else -> "待处理" }
 private fun processingStatusLabel(status: String): String = when (status) { "DRAFT" -> "草稿"; "IN_PROGRESS" -> "处理中"; "PENDING_VERIFICATION" -> "待验证"; "ENDED" -> "已结束"; "CANCELED" -> "已取消"; else -> "未知状态" }
