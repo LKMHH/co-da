@@ -1,11 +1,19 @@
-package com.coda.workbench.ui.settings
+package com.coda.workbench.platform
 
 import android.content.ContentResolver
 import android.net.Uri
-import com.coda.workbench.core.usecase.BackupDestination
-import com.coda.workbench.core.usecase.BackupSource
 import java.io.InputStream
 import java.io.OutputStream
+
+/** 备份输出目标（平台层承载文件选择与流适配，核心层只消费流）。 */
+interface BackupDestination {
+    fun openOutputStream(): OutputStream
+}
+
+/** 备份来源（平台层承载 SAF 输入流）。 */
+interface BackupSource {
+    fun openInputStream(): InputStream
+}
 
 /** SAF 选定的输出位置（技术稿 §10.2：平台层承载文件选择，核心层不依赖 Uri）。 */
 class UriBackupDestination(

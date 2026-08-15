@@ -6,7 +6,7 @@
 - `data/local`：Room Entity、Dao、Database 与迁移
 - `data/backup`：备份 DTO、ZIP 编解码、校验与导入事务
 - `data/repository`：数据访问实现
-- `platform/`：通知调度、闹钟网关、备份文件存储等平台适配
+- `platform/`：通知调度、闹钟网关、文件选择器（SAF 备份输入输出）、备份文件存储等平台适配
 - `di/`：Hilt 组合根（AppModule）
 - `ui/*`：按页面组织的 Compose 屏幕与 ViewModel（home/fault/work/handover/search/settings/attendance/schedule）
 - `ui/theme`：Material 3 颜色、字体和主题

@@ -8,21 +8,13 @@ import com.coda.workbench.data.backup.BackupPreview
 import com.coda.workbench.data.backup.BackupValidationException
 import com.coda.workbench.data.backup.RestoreResult
 import com.coda.workbench.data.repository.BackupRepository
+import com.coda.workbench.platform.BackupDestination
 import com.coda.workbench.platform.BackupFileStore
+import com.coda.workbench.platform.BackupSource
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.time.Clock
-
-/** 备份输出目标（平台层实现 SAF/文件流，核心层不依赖 Uri）。 */
-interface BackupDestination {
-    fun openOutputStream(): OutputStream
-}
-
-/** 备份来源（平台层实现 SAF 输入流）。 */
-interface BackupSource {
-    fun openInputStream(): InputStream
-}
 
 /** 启动恢复回滚结果：interrupted=检测到 PREPARED 中断；rolledBack=是否成功用安全备份回滚。 */
 data class RestoreRecoveryState(

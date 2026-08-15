@@ -2,11 +2,11 @@ package com.coda.workbench.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.coda.workbench.core.usecase.BackupDestination
-import com.coda.workbench.core.usecase.BackupSource
 import com.coda.workbench.core.usecase.BackupUseCase
 import com.coda.workbench.data.backup.BackupCounts
 import com.coda.workbench.data.backup.BackupPreview
+import com.coda.workbench.platform.BackupDestination
+import com.coda.workbench.platform.BackupSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
