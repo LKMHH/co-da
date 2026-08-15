@@ -65,6 +65,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -94,6 +95,9 @@ import com.coda.workbench.ui.settings.DeviceViewModel
 import com.coda.workbench.ui.settings.NotificationSettingsScreen
 import com.coda.workbench.ui.work.ManualWorkViewModel
 import com.coda.workbench.ui.work.WorkLogDetailViewModel
+import com.coda.workbench.ui.theme.CodaStatusAttention
+import com.coda.workbench.ui.theme.CodaStatusDanger
+import com.coda.workbench.ui.theme.CodaStatusSuccess
 import com.coda.workbench.ui.theme.CodaTheme
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -499,7 +503,7 @@ private fun WorkItem(icon: ImageVector, title: String, subtitle: String, status:
             Column(Modifier.weight(1f)) {
                 Text(title, fontWeight = FontWeight.SemiBold)
                 Text(subtitle, style = MaterialTheme.typography.bodySmall)
-                Text(status, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text(status, style = MaterialTheme.typography.labelMedium, color = statusColor(status))
             }
         }
     }
@@ -592,7 +596,7 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
                     }
                 }
             } else if (processing != null && processing.progressStatus in listOf("IN_PROGRESS", "PENDING_VERIFICATION")) {
-                Text("处理记录：${processingStatusLabel(processing.progressStatus)}", color = MaterialTheme.colorScheme.primary)
+                Text("处理记录：${processingStatusLabel(processing.progressStatus)}", color = statusColor(processingStatusLabel(processing.progressStatus)))
                 DetailField("检查结果", check) { check = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
                 DetailField("初步判断", judgement) { judgement = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
                 DetailField("最终原因", cause) { cause = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
@@ -922,7 +926,7 @@ private fun HandoverDetailScreen(modifier: Modifier, id: String, onFaultDetail: 
                 }
             }
             Text(item.summary, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-            Text("状态：$status")
+            Text("状态：$status", color = statusColor(status))
             Text("下一步动作：${item.nextAction}")
             Text("跟进期限：${runCatching { dueKindLabel(HandoverDueKind.valueOf(item.dueKind)) }.getOrDefault(item.dueKind)}")
             if (item.sourceType != null) Text("来源：${if (item.sourceType == "FAULT_PROCESSING") "故障处理" else item.sourceType}", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1021,7 +1025,8 @@ private fun WorkLogDetailScreen(
                 log.processingStartedAt?.let { Text("处理开始：${formatEpochMillis(it)}") }
                 log.processingEndedAt?.let { Text("处理结束：${formatEpochMillis(it)}") }
             }
-            Text("状态：${if (log.voidedAt == null) "已记录" else "已作废"}")
+            val statusText = if (log.voidedAt == null) "已记录" else "已作废"
+            Text("状态：$statusText", color = statusColor(statusText))
             if (log.kind == "MANUAL" && log.voidedAt == null) {
                 Button(onClick = { onEdit(log.id) }, modifier = Modifier.fillMaxWidth()) { Text("编辑工作记录") }
                 TextButton(onClick = { confirmVoid = true }, enabled = !state.saving) {
@@ -1246,7 +1251,16 @@ private fun DeviceEditScreen(modifier: Modifier, deviceId: String, viewModel: De
 private fun SettingsScreenOld(modifier: Modifier) {
 }
 
-@Composable private fun StatusBanner(label: String, icon: ImageVector) { Card(modifier = Modifier.fillMaxWidth()) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) { Icon(icon, contentDescription = null); Text(label, fontWeight = FontWeight.SemiBold) } } }
+@Composable private fun StatusBanner(label: String, icon: ImageVector) { val color = statusColor(label); Card(modifier = Modifier.fillMaxWidth()) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) { Icon(icon, contentDescription = null, tint = color); Text(label, fontWeight = FontWeight.SemiBold, color = color) } } }
+
+/** 状态语义色（视觉稿 §1.1）：按冻结标签字面量映射，文字与图标同色。 */
+@Composable
+private fun statusColor(label: String): Color = when {
+    "已恢复" in label || "已完成" in label || "已交接" in label -> CodaStatusSuccess
+    "待跟进" in label || "待验证" in label || "处理中" in label || "待处理" in label || "待交接" in label || "逾期" in label || "未恢复" in label -> CodaStatusAttention
+    "作废" in label || "已取消" in label -> CodaStatusDanger
+    else -> MaterialTheme.colorScheme.onSurfaceVariant
+}
 @Composable private fun EmptyNotice(text: String) { Text(text, Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
 @Composable private fun ErrorNotice(text: String) { Text(text, color = MaterialTheme.colorScheme.error) }
 
