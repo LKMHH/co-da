@@ -30,8 +30,16 @@ class NotificationSettingsStore(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[KEY_LAST_PROMPT] = month }
     }
 
+    /** 通知权限是否已引导过（首启只弹一次系统授权，被拒后走设置页重新申请）。 */
+    suspend fun permissionPromptedNow(): Boolean = dataStore.data.first()[KEY_PERMISSION_PROMPTED] ?: false
+
+    suspend fun markPermissionPrompted() {
+        dataStore.edit { it[KEY_PERMISSION_PROMPTED] = true }
+    }
+
     companion object {
         private val KEY_ENABLED = booleanPreferencesKey("notificationEnabled")
         private val KEY_LAST_PROMPT = stringPreferencesKey("lastShiftPromptMonth")
+        private val KEY_PERMISSION_PROMPTED = booleanPreferencesKey("notificationPermissionPrompted")
     }
 }

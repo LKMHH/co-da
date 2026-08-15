@@ -51,6 +51,13 @@ class NotificationSettingsStoreTest {
     }
 
     @Test
+    fun permissionPromptedDefaultsFalseAndPersists() = runBlocking {
+        assertEquals(false, store!!.permissionPromptedNow())
+        store!!.markPermissionPrompted()
+        assertEquals(true, store!!.permissionPromptedNow())
+    }
+
+    @Test
     fun setEnabledPersistsAcrossReads() = runBlocking {
         store!!.setEnabled(false)
         assertEquals(false, store!!.enabledNow())

@@ -1,6 +1,9 @@
 package com.coda.workbench
 
 import android.os.Bundle
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -360,7 +363,13 @@ private fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snapshot = state.snapshot
-    LaunchedEffect(Unit) { viewModel.refresh() }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+        if (state.promptNotificationPermission) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     Column(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
