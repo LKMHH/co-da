@@ -26,4 +26,9 @@ class OnboardingViewModel @Inject constructor(
         _show.value = false
         viewModelScope.launch { prefs.markOnboardingShown() }
     }
+
+    /** 设置页重看入口：直接再显示一次（不改首启标记）。 */
+    fun showAgain() {
+        _show.value = true
+    }
 }

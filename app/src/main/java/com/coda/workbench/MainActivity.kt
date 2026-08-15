@@ -298,6 +298,7 @@ private fun CodaApp(
                 onDevices = { navigate(AppRoute.DeviceList) },
                 onNotifications = { navigate(AppRoute.NotificationSettings) },
                 onBackup = { navigate(AppRoute.Backup) },
+                onViewGuide = { onboardingViewModel.showAgain() },
             )
             is AppRoute.HandoverDetail -> HandoverDetailScreen(
                 Modifier.padding(padding),
@@ -1170,6 +1171,7 @@ private fun SettingsScreen(
     onDevices: () -> Unit,
     onNotifications: () -> Unit,
     onBackup: () -> Unit,
+    onViewGuide: () -> Unit,
 ) {
     var aboutDialog by remember { mutableStateOf(false) }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1181,6 +1183,7 @@ private fun SettingsScreen(
         SettingRow("备份与恢复", "导出与替换恢复本机数据", onClick = onBackup)
         SettingRow("设备名称与别名", "", onClick = onDevices)
         SettingGroup("其他")
+        SettingRow("查看使用引导", "重新看一遍四步上手", onClick = onViewGuide)
         SettingRow("关于 CODA", "", onClick = { aboutDialog = true })
     }
     if (aboutDialog) {
