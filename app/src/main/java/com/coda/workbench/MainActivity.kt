@@ -224,6 +224,7 @@ private fun CodaApp(
     LaunchedEffect(Unit) { delay(1600); showSplash = false }
     val onboardingViewModel: OnboardingViewModel = hiltViewModel()
     val showOnboarding by onboardingViewModel.show.collectAsStateWithLifecycle()
+    BackHandler(enabled = showOnboarding && !showSplash) { onboardingViewModel.dismiss() }
     Box(Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
@@ -253,6 +254,7 @@ private fun CodaApp(
         when (val current = route) {
             AppRoute.Home -> HomeScreen(
                 modifier = Modifier.padding(padding),
+                onboardingVisible = showOnboarding,
                 onFault = { navigate(AppRoute.FaultEntry) },
                 onManual = { navigate(AppRoute.ManualWork) },
                 onSearch = { navigate(AppRoute.Search) },
@@ -342,7 +344,13 @@ private fun CodaApp(
         )
     }
     AnimatedVisibility(visible = showOnboarding && !showSplash, enter = fadeIn()) {
-        OnboardingOverlay(onDismiss = onboardingViewModel::dismiss)
+        OnboardingOverlay(
+            onDismiss = onboardingViewModel::dismiss,
+            onGoBackup = {
+                onboardingViewModel.dismiss()
+                navigate(AppRoute.Backup)
+            },
+        )
     }
     }
     restoreRecovery?.let { recovery ->
@@ -388,14 +396,15 @@ private fun HomeScreen(
     onFaultList: () -> Unit,
     onAttendance: () -> Unit,
     onOpenSchedule: () -> Unit,
+    onboardingVisible: Boolean,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snapshot = state.snapshot
     val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-    LaunchedEffect(Unit) {
-        viewModel.refresh()
-        if (state.promptNotificationPermission) {
+    LaunchedEffect(Unit) { viewModel.refresh() }
+    LaunchedEffect(state.promptNotificationPermission, onboardingVisible) {
+        if (state.promptNotificationPermission && !onboardingVisible) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
@@ -1359,7 +1368,7 @@ private fun statusColor(label: String): Color = when {
 
 /** 首次使用四步引导（记录工作/记录故障/写交接/备份恢复），首启显示一次。 */
 @Composable
-private fun OnboardingOverlay(onDismiss: () -> Unit) {
+private fun OnboardingOverlay(onDismiss: () -> Unit, onGoBackup: () -> Unit) {
     val steps = listOf(
         Triple(Icons.Outlined.EditNote, "记录工作", "点一下，写一句话就保存。\n日期和出勤自动带上，不用选。"),
         Triple(Icons.Outlined.ReportProblem, "记录故障", "设备名 + 现象，先存草稿不耽误干活；\n处理完再补原因和措施。"),
@@ -1374,7 +1383,7 @@ private fun OnboardingOverlay(onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(
-                Modifier.weight(1f),
+                Modifier.weight(1f).verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -1401,13 +1410,22 @@ private fun OnboardingOverlay(onDismiss: () -> Unit) {
                     )
                 }
             }
-            Spacer(Modifier.height(16.dp))
+            if (step == steps.lastIndex) {
+                Text(
+                    "建议现在就做第一次备份，以后换手机数据才不会丢。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (step < steps.lastIndex) {
-                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text("跳过") }
-                    Button(onClick = { step++ }, modifier = Modifier.weight(1f)) { Text("下一步") }
+                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f).height(52.dp)) { Text("跳过") }
+                    Button(onClick = { step++ }, modifier = Modifier.weight(1f).height(52.dp)) { Text("下一步") }
                 } else {
-                    Button(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text("开始使用") }
+                    Button(onClick = onGoBackup, modifier = Modifier.weight(1f).height(52.dp)) { Text("去备份") }
+                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f).height(52.dp)) { Text("开始使用") }
                 }
             }
         }
