@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 setlocal
 set "PROJECT_ROOT=%~dp0.."
 set "GRADLE_USER_HOME=%PROJECT_ROOT%\.gradle-test-home"
