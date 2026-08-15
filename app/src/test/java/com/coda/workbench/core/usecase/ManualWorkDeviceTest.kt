@@ -65,7 +65,7 @@ class ManualWorkDeviceTest {
     fun `device name matching existing device stores id and canonical snapshot`() = runBlocking {
         val device = insertDevice("一号楼配电箱")
         val id = useCase.save("巡检一号楼")
-        useCase.update(id, "巡检一号楼", null, null, null, "一号楼配电箱")
+        useCase.update(id, "巡检一号楼", null, null, null, "一号楼配电箱", null)
 
         val log = database.workLogDao().findById(id)!!
         assertEquals(device.id, log.deviceId)
@@ -75,7 +75,7 @@ class ManualWorkDeviceTest {
     @Test
     fun `free text device name stores snapshot only without creating device`() = runBlocking {
         val id = useCase.save("巡检临时点")
-        useCase.update(id, "巡检临时点", null, null, null, "临时点位A")
+        useCase.update(id, "巡检临时点", null, null, null, "临时点位A", null)
 
         val log = database.workLogDao().findById(id)!!
         assertNull(log.deviceId)
@@ -87,8 +87,8 @@ class ManualWorkDeviceTest {
     fun `blank device name clears previous values`() = runBlocking {
         insertDevice("一号楼配电箱")
         val id = useCase.save("巡检一号楼")
-        useCase.update(id, "巡检一号楼", null, null, null, "一号楼配电箱")
-        useCase.update(id, "巡检一号楼", null, null, null, "  ")
+        useCase.update(id, "巡检一号楼", null, null, null, "一号楼配电箱", null)
+        useCase.update(id, "巡检一号楼", null, null, null, "  ", null)
 
         val log = database.workLogDao().findById(id)!!
         assertNull(log.deviceId)

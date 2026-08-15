@@ -1141,6 +1141,7 @@ private fun WorkLogEditScreen(modifier: Modifier, logId: String, onSaved: (Strin
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        OutlinedTextField(state.workDate, viewModel::setWorkDate, Modifier.fillMaxWidth(), label = { Text("工作日期*（yyyy-MM-dd）") }, singleLine = true)
         OutlinedTextField(state.content, viewModel::setContent, Modifier.fillMaxWidth().height(180.dp), label = { Text("工作内容*") }, minLines = 5)
         OutlinedTextField(state.workResult, viewModel::setWorkResult, Modifier.fillMaxWidth(), label = { Text("工作结果") })
         OutlinedTextField(state.deviceName, viewModel::setDeviceName, Modifier.fillMaxWidth(), label = { Text("设备名称") }, singleLine = true)

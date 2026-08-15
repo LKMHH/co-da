@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 
 data class ManualWorkUiState(
     val content: String = "",
+    val workDate: String = "",
     val deviceName: String = "",
     val recentDevices: List<DeviceEntity> = emptyList(),
     val workResult: String = "",
@@ -49,6 +50,7 @@ class ManualWorkViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun setContent(value: String) { _state.value = _state.value.copy(content = value, error = null) }
+    fun setWorkDate(value: String) { _state.value = _state.value.copy(workDate = value, error = null) }
     fun setDeviceName(value: String) { _state.value = _state.value.copy(deviceName = value, error = null) }
     fun setWorkResult(value: String) { _state.value = _state.value.copy(workResult = value, error = null) }
     fun setArea(value: String) { _state.value = _state.value.copy(area = value, error = null) }
@@ -63,6 +65,7 @@ class ManualWorkViewModel @Inject constructor(
                         _state.value = _state.value.copy(
                             editId = id,
                             content = it.content,
+                            workDate = it.workDate,
                             deviceName = it.deviceNameSnapshot.orEmpty(),
                             workResult = it.workResult.orEmpty(),
                             area = it.area.orEmpty(),
@@ -85,12 +88,12 @@ class ManualWorkViewModel @Inject constructor(
         _state.value = current.copy(saving = true, error = null)
         return try {
             val id = if (current.editId != null) {
-                useCase.update(current.editId, current.content, current.workResult, current.area, current.arrangementSource, current.deviceName.takeIf { it.isNotBlank() })
+                useCase.update(current.editId, current.content, current.workResult, current.area, current.arrangementSource, current.deviceName.takeIf { it.isNotBlank() }, current.workDate)
                 current.editId!!
             } else {
                 val newId = useCase.save(current.content)
                 if (current.workResult.isNotBlank() || current.area.isNotBlank() || current.arrangementSource.isNotBlank() || current.deviceName.isNotBlank()) {
-                    useCase.update(newId, current.content, current.workResult, current.area, current.arrangementSource, current.deviceName.takeIf { it.isNotBlank() })
+                    useCase.update(newId, current.content, current.workResult, current.area, current.arrangementSource, current.deviceName.takeIf { it.isNotBlank() }, null)
                 }
                 newId
             }
@@ -106,8 +109,13 @@ class ManualWorkViewModel @Inject constructor(
         val id = _state.value.editId ?: return
         _state.value = _state.value.copy(saving = true, error = null)
         viewModelScope.launch {
-            runCatching { useCase.reSnapAttendance(id) }
-                .onSuccess { _state.value = _state.value.copy(saving = false, error = "已按当前出勤修正快照") }
+            runCatching {
+                useCase.reSnapAttendance(id)
+                homeUseCase.loadWorkLog(id)?.workDate
+            }
+                .onSuccess { refreshedDate ->
+                    _state.value = _state.value.copy(saving = false, workDate = refreshedDate ?: _state.value.workDate, error = "已按当前出勤修正快照")
+                }
                 .onFailure { _state.value = _state.value.copy(saving = false, error = it.message ?: "操作失败") }
         }
     }

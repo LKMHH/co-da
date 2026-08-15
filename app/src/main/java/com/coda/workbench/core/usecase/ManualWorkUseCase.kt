@@ -29,12 +29,17 @@ class ManualWorkUseCase(
         area: String?,
         arrangementSource: String?,
         deviceName: String?,
+        workDate: String?,
     ) {
         require(content.isNotBlank()) { "工作内容不能为空" }
         val log = database.workLogDao().findById(id) ?: error("工作记录不存在")
         check(log.kind == "MANUAL") { "派生记录不能直接编辑，请回到对应处理记录修正" }
         val trimmedDevice = deviceName?.trim()?.takeIf { it.isNotEmpty() }
         val matched = trimmedDevice?.let { database.deviceDao().findByNormalizedName(TextRules.normalize(it)) }
+        val parsedDate = workDate?.let {
+            if (it.isBlank()) error("工作日期不能为空")
+            runCatching { LocalDate.parse(it.trim()) }.getOrNull() ?: error("工作日期格式应为 yyyy-MM-dd")
+        }?.toString()
         database.workLogDao().updateManualFields(
             id = id,
             content = content.trim(),
@@ -43,6 +48,7 @@ class ManualWorkUseCase(
             arrangementSource = arrangementSource?.trim()?.takeIf { it.isNotEmpty() },
             deviceId = matched?.id,
             deviceNameSnapshot = matched?.name ?: trimmedDevice,
+            workDate = parsedDate,
             updatedAt = clock.millis(),
         )
     }

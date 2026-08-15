@@ -233,7 +233,7 @@ interface WorkLogDao {
     @Query(
         "UPDATE work_log SET content = :content, workResult = :workResult, area = :area, " +
             "arrangementSource = :arrangementSource, deviceId = :deviceId, deviceNameSnapshot = :deviceNameSnapshot, " +
-            "updatedAt = :updatedAt WHERE id = :id",
+            "workDate = COALESCE(:workDate, workDate), updatedAt = :updatedAt WHERE id = :id",
     )
     suspend fun updateManualFields(
         id: String,
@@ -243,6 +243,7 @@ interface WorkLogDao {
         arrangementSource: String?,
         deviceId: String?,
         deviceNameSnapshot: String?,
+        workDate: String?,
         updatedAt: Long,
     )
 
