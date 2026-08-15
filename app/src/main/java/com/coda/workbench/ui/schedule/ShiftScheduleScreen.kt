@@ -1,4 +1,6 @@
-package com.coda.workbench.ui.schedule
+﻿package com.coda.workbench.ui.schedule
+
+import com.coda.workbench.ui.theme.CodaButton
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -92,7 +94,7 @@ fun MonthScheduleScreen(modifier: Modifier, viewModel: ShiftScheduleViewModel = 
                     }
                 }
             }
-            Button(
+            CodaButton(
                 onClick = { scope.launch { viewModel.confirm() } },
                 enabled = state.selectedWhiteDayGroup != null && !state.busy,
                 modifier = Modifier.fillMaxWidth(),

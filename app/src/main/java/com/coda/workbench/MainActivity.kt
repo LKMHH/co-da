@@ -117,6 +117,8 @@ import com.coda.workbench.ui.work.WorkLogDetailViewModel
 import com.coda.workbench.ui.theme.CodaStatusAttention
 import com.coda.workbench.ui.theme.CodaStatusDanger
 import com.coda.workbench.ui.theme.CodaStatusSuccess
+import com.coda.workbench.ui.theme.CodaButton
+import com.coda.workbench.ui.theme.CodaOutlinedButton
 import com.coda.workbench.ui.theme.CodaTheme
 import javax.inject.Inject
 import kotlinx.coroutines.delay
@@ -367,7 +369,7 @@ private fun CodaApp(
                 )
             },
             confirmButton = {
-                Button(onClick = {
+                CodaButton(onClick = {
                     onInterruptAcknowledged()
                     navigate(AppRoute.Backup)
                 }) { Text("查看备份与恢复") }
@@ -578,7 +580,7 @@ private fun FaultEntryScreen(modifier: Modifier, onSaved: (String) -> Unit, view
     FormPage(
         modifier,
         bottomBar = {
-            Button(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = !state.saving && state.deviceName.isNotBlank() && state.symptom.isNotBlank(), modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存草稿") }
+            CodaButton(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = !state.saving && state.deviceName.isNotBlank() && state.symptom.isNotBlank(), modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存草稿") }
         },
     ) {
         Text("离开页面前会保存当前草稿", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -625,16 +627,16 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
         modifier,
         bottomBar = when (actionStatus) {
             "DRAFT" -> {
-                { Button(onClick = viewModel::start, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("开始处理") } }
+                { CodaButton(onClick = viewModel::start, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("开始处理") } }
             }
             "IN_PROGRESS", "PENDING_VERIFICATION" -> {
                 {
                     if (actionStatus == "IN_PROGRESS") {
-                        OutlinedButton(onClick = viewModel::markPending, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记为待验证") }
+                        CodaOutlinedButton(onClick = viewModel::markPending, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记为待验证") }
                     } else {
-                        OutlinedButton(onClick = viewModel::resume, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("继续处理") }
+                        CodaOutlinedButton(onClick = viewModel::resume, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("继续处理") }
                     }
-                    Button(onClick = viewModel::showFinishDialog, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("结束本次处理") }
+                    CodaButton(onClick = viewModel::showFinishDialog, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("结束本次处理") }
                 }
             }
             else -> null
@@ -747,7 +749,7 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
             title = { Text("取消本次处理") },
             text = { Text("确认取消？已填写内容会保留，处理进度变为“已取消”。") },
             confirmButton = {
-                Button(onClick = { viewModel.cancel(); cancelConfirm = false }, enabled = !state.saving) { Text("确认取消") }
+                CodaButton(onClick = { viewModel.cancel(); cancelConfirm = false }, enabled = !state.saving) { Text("确认取消") }
             },
             dismissButton = { TextButton(onClick = { cancelConfirm = false }, enabled = !state.saving) { Text("返回") } },
         )
@@ -758,7 +760,7 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
             title = { Text("作废处理记录") },
             text = { Text("作废后从默认列表隐藏，不会删除、不改写故障状态") },
             confirmButton = {
-                Button(onClick = { viewModel.voidProcessing(); voidProcessingConfirm = false }, enabled = !state.saving) { Text("确认作废") }
+                CodaButton(onClick = { viewModel.voidProcessing(); voidProcessingConfirm = false }, enabled = !state.saving) { Text("确认作废") }
             },
             dismissButton = { TextButton(onClick = { voidProcessingConfirm = false }, enabled = !state.saving) { Text("取消") } },
         )
@@ -769,7 +771,7 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
             title = { Text("作废故障记录") },
             text = { Text("作废后故障显示为“已作废”，从默认列表隐藏；关联的处理和工作记录不删除") },
             confirmButton = {
-                Button(onClick = { viewModel.voidFault(); voidFaultConfirm = false }, enabled = !state.saving) { Text("确认作废") }
+                CodaButton(onClick = { viewModel.voidFault(); voidFaultConfirm = false }, enabled = !state.saving) { Text("确认作废") }
             },
             dismissButton = { TextButton(onClick = { voidFaultConfirm = false }, enabled = !state.saving) { Text("取消") } },
         )
@@ -785,7 +787,7 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
                 }
             },
             confirmButton = {
-                Button(
+                CodaButton(
                     onClick = {
                         val zone = ZoneId.systemDefault()
                         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.SIMPLIFIED_CHINESE)
@@ -806,7 +808,7 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
             title = { Text("作废工作记录") },
             text = { Text("作废后从默认列表隐藏，不会删除") },
             confirmButton = {
-                Button(
+                CodaButton(
                     onClick = {
                         viewModel.voidDerivedLog(logId)
                         voidLogId = null
@@ -882,8 +884,8 @@ private fun FinishSheet(saving: Boolean, viewModel: FaultDetailViewModel) {
                 if (dueKind == HandoverDueKind.SPECIFIC) OutlinedTextField(dueText, { dueText = it }, Modifier.fillMaxWidth(), label = { Text("具体期限*（yyyy-MM-dd）") })
             }
             Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = viewModel::hideFinishDialog, enabled = !saving, modifier = Modifier.weight(1f)) { Text("取消") }
-                Button(onClick = { result?.let { viewModel.finish(it, verification.ifBlank { null }, nextAction.ifBlank { null }, dueAt, dueKind ?: HandoverDueKind.NONE) } }, enabled = canConfirm, modifier = Modifier.weight(1f)) { Text(if (saving) "保存中…" else "确认结束") }
+                CodaOutlinedButton(onClick = viewModel::hideFinishDialog, enabled = !saving, modifier = Modifier.weight(1f)) { Text("取消") }
+                CodaButton(onClick = { result?.let { viewModel.finish(it, verification.ifBlank { null }, nextAction.ifBlank { null }, dueAt, dueKind ?: HandoverDueKind.NONE) } }, enabled = canConfirm, modifier = Modifier.weight(1f)) { Text(if (saving) "保存中…" else "确认结束") }
             }
         }
     }
@@ -949,7 +951,7 @@ private fun ManualWorkScreen(modifier: Modifier, onSaved: (String) -> Unit, view
     FormPage(
         modifier,
         bottomBar = {
-            Button(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = content.isNotBlank() && !state.saving, modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存工作记录") }
+            CodaButton(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = content.isNotBlank() && !state.saving, modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存工作记录") }
         },
     ) {
         Text(
@@ -995,20 +997,20 @@ private fun HandoverDetailScreen(modifier: Modifier, id: String, onFaultDetail: 
             when (s) {
                 "PENDING_HANDOVER" -> {
                     {
-                        Button(onClick = { pendingAction = "markHandedOver" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记已交接") }
-                        OutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
+                        CodaButton(onClick = { pendingAction = "markHandedOver" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记已交接") }
+                        CodaOutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
                     }
                 }
                 "HANDED_OVER" -> {
                     {
-                        Button(onClick = { pendingAction = "markInProgress" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记处理中") }
-                        OutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
+                        CodaButton(onClick = { pendingAction = "markInProgress" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记处理中") }
+                        CodaOutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
                     }
                 }
                 "IN_PROGRESS" -> {
                     {
-                        Button(onClick = { pendingAction = "complete" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记已完成") }
-                        OutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
+                        CodaButton(onClick = { pendingAction = "complete" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记已完成") }
+                        CodaOutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
                     }
                 }
                 else -> null
@@ -1059,7 +1061,7 @@ private fun HandoverDetailScreen(modifier: Modifier, id: String, onFaultDetail: 
             title = { Text(label) },
             text = { Text("确认执行：$label？") },
             confirmButton = {
-                Button(
+                CodaButton(
                     onClick = {
                         when (action) {
                             "markHandedOver" -> viewModel.markHandedOver()
@@ -1081,7 +1083,7 @@ private fun HandoverDetailScreen(modifier: Modifier, id: String, onFaultDetail: 
             title = { Text("作废事项") },
             text = { Text("作废后从默认列表隐藏，不删除记录、不改变关联故障状态") },
             confirmButton = {
-                Button(
+                CodaButton(
                     onClick = { viewModel.void(); confirmVoid = false },
                     enabled = !state.saving,
                 ) { Text("确认作废") }
@@ -1122,13 +1124,13 @@ private fun WorkLogDetailScreen(
             val statusText = if (log.voidedAt == null) "已记录" else "已作废"
             Text("状态：$statusText", color = statusColor(statusText))
             if (log.kind == "MANUAL" && log.voidedAt == null) {
-                Button(onClick = { onEdit(log.id) }, modifier = Modifier.fillMaxWidth()) { Text("编辑工作记录") }
+                CodaButton(onClick = { onEdit(log.id) }, modifier = Modifier.fillMaxWidth()) { Text("编辑工作记录") }
                 TextButton(onClick = { confirmVoid = true }, enabled = !state.saving) {
                     Text("作废工作记录", color = MaterialTheme.colorScheme.error)
                 }
             }
             if (log.kind == "FAULT_DERIVED" && state.faultId != null) {
-                Button(onClick = { onFaultDetail(state.faultId!!) }, modifier = Modifier.fillMaxWidth()) { Text("查看故障详情") }
+                CodaButton(onClick = { onFaultDetail(state.faultId!!) }, modifier = Modifier.fillMaxWidth()) { Text("查看故障详情") }
             }
         }
     }
@@ -1138,7 +1140,7 @@ private fun WorkLogDetailScreen(
             title = { Text("作废工作记录") },
             text = { Text("作废后从默认列表隐藏，不会删除") },
             confirmButton = {
-                Button(onClick = { viewModel.voidManual(); confirmVoid = false }, enabled = !state.saving) { Text("确认作废") }
+                CodaButton(onClick = { viewModel.voidManual(); confirmVoid = false }, enabled = !state.saving) { Text("确认作废") }
             },
             dismissButton = { TextButton(onClick = { confirmVoid = false }, enabled = !state.saving) { Text("取消") } },
         )
@@ -1218,7 +1220,7 @@ private fun HandoverCreateScreen(modifier: Modifier, onSaved: (String) -> Unit, 
     FormPage(
         modifier,
         bottomBar = {
-            Button(onClick = { scope.launch { viewModel.create() } }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存交接事项") }
+            CodaButton(onClick = { scope.launch { viewModel.create() } }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存交接事项") }
         },
     ) {
         OutlinedTextField(state.summary, viewModel::setSummary, Modifier.fillMaxWidth(), label = { Text("事项摘要（选填）") })
@@ -1251,7 +1253,7 @@ private fun WorkLogEditScreen(modifier: Modifier, logId: String, onSaved: (Strin
     FormPage(
         modifier,
         bottomBar = {
-            Button(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = state.content.isNotBlank() && !state.saving, modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存修改") }
+            CodaButton(onClick = { scope.launch { viewModel.saveOnce()?.let(onSaved) } }, enabled = state.content.isNotBlank() && !state.saving, modifier = Modifier.weight(1f)) { Text(if (state.saving) "保存中…" else "保存修改") }
         },
     ) {
         OutlinedTextField(state.workDate, viewModel::setWorkDate, Modifier.fillMaxWidth(), label = { Text("工作日期*（yyyy-MM-dd）") }, singleLine = true)
@@ -1267,7 +1269,7 @@ private fun WorkLogEditScreen(modifier: Modifier, logId: String, onSaved: (Strin
         }
         OutlinedTextField(state.area, viewModel::setArea, Modifier.fillMaxWidth(), label = { Text("区域") })
         OutlinedTextField(state.arrangementSource, viewModel::setArrangementSource, Modifier.fillMaxWidth(), label = { Text("安排来源") })
-        OutlinedButton(onClick = viewModel::reSnapAttendance, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) { Text("出勤标记：按当前出勤修正快照") }
+        CodaOutlinedButton(onClick = viewModel::reSnapAttendance, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) { Text("出勤标记：按当前出勤修正快照") }
         state.error?.let { ErrorNotice(it) }
     }
 }
@@ -1307,7 +1309,7 @@ private fun DeviceListScreen(modifier: Modifier, onDeviceDetail: (String) -> Uni
             title = { Text("添加设备") },
             text = { OutlinedTextField(newName, { newName = it }, label = { Text("设备名称") }, singleLine = true) },
             confirmButton = {
-                Button(onClick = { scope.launch { viewModel.create(newName) { addDialog = false; newName = "" } } }, enabled = newName.isNotBlank()) { Text("添加") }
+                CodaButton(onClick = { scope.launch { viewModel.create(newName) { addDialog = false; newName = "" } } }, enabled = newName.isNotBlank()) { Text("添加") }
             },
             dismissButton = { TextButton(onClick = { addDialog = false }) { Text("取消") } },
         )
@@ -1327,7 +1329,7 @@ private fun DeviceEditScreen(modifier: Modifier, deviceId: String, viewModel: De
         viewModel.state.value.error?.let { ErrorNotice(it) }
         device?.let {
             OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("标准名称") }, singleLine = true)
-            Button(onClick = { scope.launch { viewModel.rename(it.id, name) } }, enabled = name.isNotBlank() && !viewModel.state.value.busy, modifier = Modifier.fillMaxWidth()) { Text("保存名称") }
+            CodaButton(onClick = { scope.launch { viewModel.rename(it.id, name) } }, enabled = name.isNotBlank() && !viewModel.state.value.busy, modifier = Modifier.fillMaxWidth()) { Text("保存名称") }
             Text("别名（参与搜索）", style = MaterialTheme.typography.labelLarge)
             aliases.forEach { alias ->
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -1337,12 +1339,12 @@ private fun DeviceEditScreen(modifier: Modifier, deviceId: String, viewModel: De
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(newAlias, { newAlias = it }, Modifier.weight(1f), label = { Text("新别名") }, singleLine = true)
-                Button(onClick = { scope.launch { viewModel.addAlias(it.id, newAlias); newAlias = "" } }, enabled = newAlias.isNotBlank()) { Text("添加") }
+                CodaButton(onClick = { scope.launch { viewModel.addAlias(it.id, newAlias); newAlias = "" } }, enabled = newAlias.isNotBlank()) { Text("添加") }
             }
             if (it.isActive) {
-                OutlinedButton(onClick = { scope.launch { viewModel.setActive(it.id, false) } }, modifier = Modifier.fillMaxWidth()) { Text("停用设备") }
+                CodaOutlinedButton(onClick = { scope.launch { viewModel.setActive(it.id, false) } }, modifier = Modifier.fillMaxWidth()) { Text("停用设备") }
             } else {
-                Button(onClick = { scope.launch { viewModel.setActive(it.id, true) } }, modifier = Modifier.fillMaxWidth()) { Text("重新启用") }
+                CodaButton(onClick = { scope.launch { viewModel.setActive(it.id, true) } }, modifier = Modifier.fillMaxWidth()) { Text("重新启用") }
             }
         }
         if (device == null && !viewModel.state.value.busy) EmptyNotice("设备不存在")
@@ -1421,11 +1423,11 @@ private fun OnboardingOverlay(onDismiss: () -> Unit, onGoBackup: () -> Unit) {
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (step < steps.lastIndex) {
-                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f).height(52.dp)) { Text("跳过") }
-                    Button(onClick = { step++ }, modifier = Modifier.weight(1f).height(52.dp)) { Text("下一步") }
+                    CodaOutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f).height(52.dp)) { Text("跳过") }
+                    CodaButton(onClick = { step++ }, modifier = Modifier.weight(1f).height(52.dp)) { Text("下一步") }
                 } else {
-                    Button(onClick = onGoBackup, modifier = Modifier.weight(1f).height(52.dp)) { Text("去备份") }
-                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f).height(52.dp)) { Text("开始使用") }
+                    CodaButton(onClick = onGoBackup, modifier = Modifier.weight(1f).height(52.dp)) { Text("去备份") }
+                    CodaOutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f).height(52.dp)) { Text("开始使用") }
                 }
             }
         }

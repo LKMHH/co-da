@@ -1,4 +1,6 @@
-package com.coda.workbench.ui.attendance
+﻿package com.coda.workbench.ui.attendance
+
+import com.coda.workbench.ui.theme.CodaButton
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -111,7 +113,7 @@ fun AttendanceScreen(modifier: Modifier, onOpenSchedule: () -> Unit, viewModel: 
             }
         }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Button(
+        CodaButton(
             onClick = { scope.launch { viewModel.save() } },
             enabled = !state.busy,
             modifier = Modifier.fillMaxWidth(),

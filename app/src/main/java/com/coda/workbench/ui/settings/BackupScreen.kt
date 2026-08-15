@@ -1,4 +1,8 @@
-package com.coda.workbench.ui.settings
+﻿package com.coda.workbench.ui.settings
+
+import com.coda.workbench.ui.theme.CodaOutlinedButton
+
+import com.coda.workbench.ui.theme.CodaButton
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -65,7 +69,7 @@ fun BackupScreen(modifier: Modifier, viewModel: BackupViewModel = hiltViewModel(
                 }
                 Text("将故障、工作、交接、出勤、排班、设备名称及别名保存为备份文件。", style = MaterialTheme.typography.bodySmall)
                 Text("文件未加密，请妥善保管。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Button(
+                CodaButton(
                     onClick = {
                         val name = "coda-备份-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"))}.coda-backup"
                         exportLauncher.launch(name)
@@ -83,7 +87,7 @@ fun BackupScreen(modifier: Modifier, viewModel: BackupViewModel = hiltViewModel(
                 }
                 Text("导入备份会替换本机业务数据。", style = MaterialTheme.typography.bodySmall)
                 Text("手机通知等设置不会改变。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                OutlinedButton(
+                CodaOutlinedButton(
                     onClick = { pickLauncher.launch(arrayOf("*/*")) },
                     enabled = !state.busy,
                     modifier = Modifier.fillMaxWidth(),
@@ -108,7 +112,7 @@ fun BackupScreen(modifier: Modifier, viewModel: BackupViewModel = hiltViewModel(
                 }
             },
             confirmButton = {
-                Button(onClick = viewModel::confirmReplace, enabled = !state.busy) {
+                CodaButton(onClick = viewModel::confirmReplace, enabled = !state.busy) {
                     Text(if (state.busy) "正在替换本机数据…" else "确认替换本机数据")
                 }
             },
