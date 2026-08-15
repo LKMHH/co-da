@@ -968,7 +968,7 @@ App 启动发现 restore journal 为 `PREPARED` 时，首先使用安全备份�
 
 以下项目在视觉上有入口或状态呈现需要，但技术稿没有提供足够明确的契约。本稿只标记问题，不新增接口名称、字段或状态：
 
-1. **导航路由不是领域 UseCase**：返回、首页四入口、设置、详情跳转均由技术稿提到的 Navigation Compose 路由承载，但没有显式路由表或参数契约。实现时需要确认路由参数（faultId、processingId、workLogId、handoverId、month），视觉稿不定义新的业务接口。
+1. **导航路由不是领域 UseCase**：返回、首页四入口、设置、详情跳转均由技术稿 §2.3-3 认可的手写路由状态机（`AppRoute` 密封接口 + 返回栈）承载，但路由参数契约（faultId、processingId、workLogId、handoverId、month）未在技术稿展开。实现时以 `AppRoute` 实际字段为准，视觉稿不定义新的业务接口。
 2. **首页“最近故障查看全部”**：技术稿有 `FaultQueryUseCase.observeDetail`，没有明确的故障列表查询接口。应确认是否由 `HomeQueryUseCase` 扩展查询范围或复用 `SearchUseCase`，不能在 UI 层自行添加 `observeList`。
 3. **`HomeQuery` 视图切换字段**：技术稿只给出 `observe(query: HomeQuery)`，没有列出自然日/本次出勤的参数名和返回结构。需确认查询参数及空态字段，视觉上只保留两个既定模式。
 4. **快速页自动保存输入结构**：`createDraft`、`saveDraft` 已存在；v1.1 已明确 DRAFT 详情不编辑设备名称，设备名在创建时写入关联和快照，后续 `FaultDraftPatch` 只承载故障现象、接报时间等既有草稿字段。设备建议使用 `DeviceUseCase.observe(false)`，不新增独立“关键词”字段。
