@@ -570,7 +570,27 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
     var voidFaultConfirm by remember { mutableStateOf(false) }
     var reportEdit by remember { mutableStateOf(false) }
     var reportText by remember { mutableStateOf("") }
-    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    val processing = snapshot?.latestProcessing
+    val actionStatus = processing?.progressStatus
+    FormPage(
+        modifier,
+        bottomBar = when (actionStatus) {
+            "DRAFT" -> {
+                { Button(onClick = viewModel::start, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("开始处理") } }
+            }
+            "IN_PROGRESS", "PENDING_VERIFICATION" -> {
+                {
+                    if (actionStatus == "IN_PROGRESS") {
+                        OutlinedButton(onClick = viewModel::markPending, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记为待验证") }
+                    } else {
+                        OutlinedButton(onClick = viewModel::resume, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("继续处理") }
+                    }
+                    Button(onClick = viewModel::showFinishDialog, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("结束本次处理") }
+                }
+            }
+            else -> null
+        },
+    ) {
         if (state.loading && snapshot == null) Text("正在加载…")
         state.error?.let { ErrorNotice(it) }
         snapshot?.let { detail ->
@@ -593,9 +613,8 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
             }
             if (processing != null && processing.progressStatus == "DRAFT") {
                 Text("处理记录：草稿（尚未开始）", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = viewModel::start, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("开始处理") }
-                    var menu by remember { mutableStateOf(false) }
+                var menu by remember { mutableStateOf(false) }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     Box(contentAlignment = Alignment.TopEnd) {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "更多") }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -609,15 +628,6 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
                 DetailField("初步判断", judgement) { judgement = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
                 DetailField("最终原因", cause) { cause = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
                 DetailField("处理措施", measures) { measures = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
-                Spacer(Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (processing.progressStatus == "IN_PROGRESS") {
-                        OutlinedButton(onClick = viewModel::markPending, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记为待验证") }
-                    } else {
-                        OutlinedButton(onClick = viewModel::resume, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("继续处理") }
-                    }
-                    Button(onClick = viewModel::showFinishDialog, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("结束本次处理") }
-                }
                 var menu by remember { mutableStateOf(false) }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     Box(contentAlignment = Alignment.TopEnd) {
@@ -920,8 +930,33 @@ private fun HandoverDetailScreen(modifier: Modifier, id: String, onFaultDetail: 
     val scope = rememberCoroutineScope()
     var confirmVoid by remember { mutableStateOf(false) }
     var pendingAction by remember { mutableStateOf<String?>(null) }
-    Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (state.loading && state.item == null) { Text("正在加载…"); return@Column }
+    FormPage(
+        modifier,
+        bottomBar = state.item?.status?.let { s ->
+            when (s) {
+                "PENDING_HANDOVER" -> {
+                    {
+                        Button(onClick = { pendingAction = "markHandedOver" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记已交接") }
+                        OutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
+                    }
+                }
+                "HANDED_OVER" -> {
+                    {
+                        Button(onClick = { pendingAction = "markInProgress" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记处理中") }
+                        OutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
+                    }
+                }
+                "IN_PROGRESS" -> {
+                    {
+                        Button(onClick = { pendingAction = "complete" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记已完成") }
+                        OutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
+                    }
+                }
+                else -> null
+            }
+        },
+    ) {
+        if (state.loading && state.item == null) { Text("正在加载…"); return@FormPage }
         state.error?.let { ErrorNotice(it) }
         state.item?.let { item ->
             val status = handoverStatusLabel(item.status)
@@ -943,20 +978,8 @@ private fun HandoverDetailScreen(modifier: Modifier, id: String, onFaultDetail: 
             Text("跟进期限：${runCatching { dueKindLabel(HandoverDueKind.valueOf(item.dueKind)) }.getOrDefault(item.dueKind)}")
             if (item.sourceType != null) Text("来源：${if (item.sourceType == "FAULT_PROCESSING") "故障处理" else item.sourceType}", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))
-            when (item.status) {
-                "PENDING_HANDOVER" -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { pendingAction = "markHandedOver" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记已交接") }
-                    OutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
-                }
-                "HANDED_OVER" -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { pendingAction = "markInProgress" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记处理中") }
-                    OutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
-                }
-                "IN_PROGRESS" -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { pendingAction = "complete" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("标记已完成") }
-                    OutlinedButton(onClick = { pendingAction = "cancel" }, enabled = !state.saving, modifier = Modifier.weight(1f)) { Text("取消事项") }
-                }
-                else -> Text(if (item.status == "CANCELED") "该事项已取消，仅可查看" else "该事项已结束，仅可查看或作废", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (item.status !in setOf("PENDING_HANDOVER", "HANDED_OVER", "IN_PROGRESS")) {
+                Text(if (item.status == "CANCELED") "该事项已取消，仅可查看" else "该事项已结束，仅可查看或作废", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (item.status != "CANCELED") {
                 TextButton(onClick = { confirmVoid = true }, enabled = !state.saving) {
