@@ -901,6 +901,7 @@ private fun ManualWorkScreen(modifier: Modifier, onSaved: (String) -> Unit, view
 private fun HandoverDetailScreen(modifier: Modifier, id: String, onFaultDetail: (String) -> Unit, viewModel: HandoverViewModel = hiltViewModel()) {
     LaunchedEffect(id) { viewModel.load(id) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
     var confirmVoid by remember { mutableStateOf(false) }
     var pendingAction by remember { mutableStateOf<String?>(null) }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -915,7 +916,7 @@ private fun HandoverDetailScreen(modifier: Modifier, id: String, onFaultDetail: 
                     Box(contentAlignment = Alignment.TopEnd) {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "更多") }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                            DropdownMenuItem(text = { Text("继续处理故障") }, onClick = { menu = false; state.faultId?.let(onFaultDetail) })
+                            DropdownMenuItem(text = { Text("继续处理故障") }, onClick = { menu = false; scope.launch { viewModel.continueFaultProcessing()?.let(onFaultDetail) } })
                         }
                     }
                 }
