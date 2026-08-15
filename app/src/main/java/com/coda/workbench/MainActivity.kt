@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeOut
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -75,6 +78,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -108,6 +113,7 @@ import com.coda.workbench.ui.theme.CodaStatusDanger
 import com.coda.workbench.ui.theme.CodaStatusSuccess
 import com.coda.workbench.ui.theme.CodaTheme
 import javax.inject.Inject
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -208,6 +214,9 @@ private fun CodaApp(
         AppRoute.Backup -> "备份与恢复"
     }
     BackHandler(enabled = route != AppRoute.Home) { goBack() }
+    var showSplash by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) { delay(1600); showSplash = false }
+    Box(Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -315,6 +324,15 @@ private fun CodaApp(
             AppRoute.NotificationSettings -> NotificationSettingsScreen(Modifier.padding(padding))
             AppRoute.Backup -> BackupScreen(Modifier.padding(padding))
         }
+    }
+    AnimatedVisibility(visible = showSplash, exit = fadeOut()) {
+        Image(
+            painter = painterResource(R.drawable.coda_splash),
+            contentDescription = "启动页",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+        )
+    }
     }
     restoreRecovery?.let { recovery ->
         AlertDialog(
