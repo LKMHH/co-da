@@ -33,7 +33,7 @@
 | --- | --- | --- |
 | 语言 | Kotlin | 所有业务规则使用可测试的 Kotlin 纯函数或用例 |
 | UI | Jetpack Compose + Material 3 | 单向数据流，屏幕不直接操作 DAO |
-| 导航 | Navigation Compose | 首页四入口和设置页使用显式路由 |
+| 导航 | 手写路由状态机（§2.3-3 批准的等价实现） | `AppRoute` 密封接口 + 返回栈；首页四入口和设置页使用显式路由 |
 | 本地数据库 | Room + SQLite | 外键、唯一索引和事务由数据库保证 |
 | 设置 | Jetpack DataStore Preferences | 只保存通知开关等非业务偏好 |
 | 异步 | Kotlin Coroutines + Flow | DAO 通过 Flow 暴露列表和首页聚合数据 |
@@ -50,24 +50,21 @@
 
 ```text
 app/
-  core/model/          纯 Kotlin 领域枚举、值对象、状态机、排班和文本规则
-  core/common/         AppResult/AppError、日期与文本格式化
-  core/design/         Compose 主题、通用空态、确认框和状态标签
+  core/model/          纯 Kotlin 领域枚举、值对象
+  core/rules/          状态机、排班、文本规则（原 core/common 职责并入此处）
+  core/usecase/        用例（§2.3-2 批准：原 domain/usecase 并入 core）
   data/local/          Room Entity、Dao、Database、Migration
   data/backup/         备份 DTO、ZIP、校验、导入事务
   data/repository/     Repository 实现
-  domain/usecase/      创建、完成、作废、搜索、排班和提醒用例
-  platform/            Clock、通知、文件选择器适配
-  navigation/          类型安全路由表，feature 之间不直接引用
-  feature/home/        今日工作台
-  feature/fault/       故障草稿和处理
-  feature/worklog/     普通工作和统一工作列表
-  feature/handover/    交接/待跟进
-  feature/search/      查找
-  feature/settings/    出勤、排班、备份和通知设置
+  platform/            通知调度、闹钟网关、文件选择器、备份文件存储等平台适配
+  di/                  Hilt 组合根
+  ui/                  按页面组织的 Compose 屏幕与 ViewModel（原 feature/* 按实际代码改为 ui/）
+  ui/theme/            Compose 主题、颜色与字体（原 core/design 职责）
 ```
 
-屏幕使用 `ViewModel -> UseCase -> Repository -> Room` 链路。依赖方向固定为：`feature -> domain -> core`，`data -> domain + core`，`platform -> domain + core`；`domain` 不依赖 `data`，由 App 组合根通过 Hilt 组装实现。ViewModel 只编排 UI 状态和导航，不包含状态转换、排班算法或备份替换逻辑。
+> 本节树形已于 M8 收口按 §2.3-2/§2.3-3 与实际代码回改：`domain/usecase → core/usecase`、`feature/* → ui/*`、`core/design → ui/theme`、`core/common` 职责并入 `core/rules`，`navigation/` 由 §2.3-3 手写路由替代。仓库中遗留的空目录壳 `domain/`、`feature/` 无源码，属清理项。
+
+屏幕使用 `ViewModel -> UseCase -> Repository -> Room` 链路（§2.3-2 认可的直连形态）。依赖方向固定为：`ui -> core/usecase -> data`，`data -> core(model/rules)`，`platform` 通过注入供用例使用；`core/model`、`core/rules` 不依赖任何其他层，由 App 组合根（`di/`）通过 Hilt 组装实现。ViewModel 只编排 UI 状态和导航，不包含状态转换、排班算法或备份替换逻辑。
 
 Hilt 只负责依赖组装，不承载业务规则。Database、DAO 和 Repository 使用单例范围；ViewModel 使用页面范围；正式运行注入系统 `Clock`，测试注入固定时间的 Fake Clock。
 
@@ -103,7 +100,7 @@ Hilt 只负责依赖组装，不承载业务规则。Database、DAO 和 Reposito
 
 版本政策：Room 的 `roomSchemaVersion` 只负责数据库迁移；备份的 `formatVersion`/`minReaderVersion` 只负责备份文件兼容；DataStore 的 `preferencesSchemaVersion` 只负责本机偏好迁移。三者是独立版本轴，不要求数值一致；跨层转换必须通过显式适配器完成，数据库迁移不会自动改变备份协议。
 
-错误政策：命令型用例使用统一的 `AppResult<T>` 和 `AppError`，至少覆盖 `StorageFull`、`DatabaseFailure`、`ValidationFailure`、`BackupFormatInvalid`、`PermissionDenied` 和状态冲突 `Conflict`。列表型 `Flow` 保持数据流语义，在 ViewModel 层通过 `catch` 映射错误；不强迫所有持续查询都包装成一次性 `Result`。
+错误政策：命令型用例使用统一的 `AppResult<T>` 和 `AppError`，至少覆盖 `StorageFull`、`DatabaseFailure`、`ValidationFailure`、`BackupFormatInvalid`、`PermissionDenied` 和状态冲突 `Conflict`。列表型 `Flow` 保持数据流语义，在 ViewModel 层通过 `catch` 映射错误；不强迫所有持续查询都包装成一次性 `Result`。**等价实现（§2.3-1）：代码采用异常式错误处理，`AppResult`/`AppError` 为描述性伪类型、不在代码中出现；`Conflict` 语义由带中文消息的 `IllegalStateException` 承载，接口签名以代码为准。**
 
 ### 3.2 核心实体
 
@@ -337,6 +334,8 @@ stateDiagram-v2
 `fault_processing` 没有额外的 `VOIDED` 枚举；作废终态处理时写入 `voidedAt` 并从默认列表隐藏，原有 `progressStatus = ENDED` 或 `CANCELED` 和所有结果快照保持不变。
 
 ## 5. 关键用例接口
+
+> 接口签名以代码为准：本节 `AppResult`/`AppError` 为描述性伪类型（§2.3-1 批准异常式等价实现）；`domain/usecase` 已按 §2.3-2 并入 `core/usecase`；个别签名差异（如 `startProcessing(processingId)`、`continueProcessing(processingId)`、`DeviceUseCase.observeAll()`、`BackupUseCase.replace(source, safetyFile)` 等）以代码实现为准。
 
 以下接口是领域层契约，具体实现可用 Kotlin `suspend`/`Flow`：
 
