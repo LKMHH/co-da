@@ -304,6 +304,9 @@ interface HandoverItemDao {
     @Query("SELECT * FROM handover_item WHERE voidedAt IS NULL AND status IN ('PENDING_HANDOVER','HANDED_OVER','IN_PROGRESS') ORDER BY dueAt IS NULL, dueAt ASC, updatedAt DESC")
     suspend fun pending(): List<HandoverItemEntity>
 
+    @Query("SELECT * FROM handover_item WHERE status IN ('PENDING_HANDOVER','HANDED_OVER','IN_PROGRESS') ORDER BY dueAt IS NULL, dueAt ASC, updatedAt DESC")
+    suspend fun pendingIncludingVoided(): List<HandoverItemEntity>
+
     @Query("SELECT * FROM handover_item WHERE id = :id")
     suspend fun findById(id: String): HandoverItemEntity?
 
@@ -331,6 +334,9 @@ interface HandoverItemDao {
 
     @Query("SELECT * FROM handover_item WHERE voidedAt IS NULL AND status IN ('COMPLETED','CANCELED') ORDER BY updatedAt DESC")
     suspend fun finished(): List<HandoverItemEntity>
+
+    @Query("SELECT * FROM handover_item WHERE status IN ('COMPLETED','CANCELED') ORDER BY updatedAt DESC")
+    suspend fun finishedIncludingVoided(): List<HandoverItemEntity>
 
     // ---- M5 本地通知 ----
     @Query(

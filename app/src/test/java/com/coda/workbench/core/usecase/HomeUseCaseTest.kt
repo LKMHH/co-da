@@ -131,6 +131,32 @@ class HomeUseCaseTest {
         assertEquals("2026-08-14", log.shiftBusinessDateSnapshot)
     }
 
+    @Test
+    fun voidedFaultsAndHandoversVisibleOnlyWhenRequested() = runBlocking {
+        openDatabase()
+        val device = DeviceEntity("device-v", "配电柜", "配电柜", true, 1L, 1L)
+        database!!.deviceDao().insert(device)
+        database!!.faultRecordDao().insert(
+            FaultRecordEntity("fault-active", device.id, device.name, 2L, "信号弱", "OPEN", null, 1L, 1L, null),
+        )
+        database!!.faultRecordDao().insert(
+            FaultRecordEntity("fault-voided", device.id, device.name, 3L, "跳闸", "VOIDED", null, 1L, 1L, 9L),
+        )
+        database!!.handoverItemDao().insert(handover("ho-active", null))
+        database!!.handoverItemDao().insert(handover("ho-voided", null))
+        database!!.handoverItemDao().markVoided("ho-voided", 9L, 9L)
+
+        val repository = HomeRepository(database!!, clock, zone)
+        val hidden = repository.load()
+        assertFalse(hidden.allFaults.any { it.id == "fault-voided" })
+        assertFalse(hidden.pendingUnfinished.any { it.id == "ho-voided" })
+
+        val shown = repository.load(includeVoided = true)
+        assertTrue(shown.allFaults.any { it.id == "fault-voided" })
+        assertTrue(shown.recentFaults.any { it.id == "fault-voided" })
+        assertTrue(shown.pendingUnfinished.any { it.id == "ho-voided" })
+    }
+
     private fun openDatabase() {
         database = Room.inMemoryDatabaseBuilder(context, CodaDatabase::class.java)
             .allowMainThreadQueries().build()

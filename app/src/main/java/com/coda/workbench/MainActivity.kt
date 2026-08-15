@@ -401,8 +401,9 @@ private fun HomeScreen(
             val handovers = (home.pendingOverdue + home.pendingUnfinished + home.pendingUpcoming).take(3)
             if (handovers.isEmpty()) EmptyNotice("暂无待跟进事项")
             handovers.forEach { item ->
+                val status = if (item.voidedAt != null) "已作废" else overdueLabel(item, state.nowMillis)
                 Card(modifier = Modifier.fillMaxWidth(), onClick = { onHandoverDetail(item.id) }) {
-                    WorkItem(Icons.Outlined.PendingActions, item.summary, item.nextAction, overdueLabel(item, state.nowMillis))
+                    WorkItem(Icons.Outlined.PendingActions, item.summary, item.nextAction, status)
                 }
             }
             if (home.drafts.isNotEmpty()) {
@@ -864,8 +865,9 @@ private fun HandoverScreen(modifier: Modifier, onHandoverDetail: (String) -> Uni
                     SectionTitle(label, items.size.toString())
                     items.forEach { item ->
                         val dueLabel = runCatching { dueKindLabel(HandoverDueKind.valueOf(item.dueKind)) }.getOrDefault(item.dueKind)
+                        val status = if (item.voidedAt != null) "已作废" else dueLabel
                         Card(modifier = Modifier.fillMaxWidth(), onClick = { onHandoverDetail(item.id) }) {
-                            WorkItem(Icons.Outlined.PendingActions, item.summary, item.nextAction, dueLabel)
+                            WorkItem(Icons.Outlined.PendingActions, item.summary, item.nextAction, status)
                         }
                     }
                 }

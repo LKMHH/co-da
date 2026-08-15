@@ -61,8 +61,16 @@ class HomeRepository(
                 database.workLogDao().forWorkDate(workDate)
             }
         }.filter { kindFilter == WorkKindFilter.ALL || it.kind == kindFilter.name }
-        val pending = database.handoverItemDao().pending()
-        val allFaults = database.faultRecordDao().all()
+        val pending = if (includeVoided) {
+            database.handoverItemDao().pendingIncludingVoided()
+        } else {
+            database.handoverItemDao().pending()
+        }
+        val allFaults = if (includeVoided) {
+            database.faultRecordDao().allIncludingVoided().sortedByDescending { it.reportedAt }
+        } else {
+            database.faultRecordDao().all()
+        }
         val restoreByFault = allFaults.mapNotNull { fault ->
             fault.lastProcessingId?.let { pid ->
                 database.faultProcessingDao().findById(pid)?.restoreResult?.let { fault.id to it }
@@ -74,10 +82,14 @@ class HomeRepository(
             pendingUpcoming = pending.filter { it.dueAt != null && it.dueAt >= now },
             pendingOverdue = pending.filter { it.dueAt != null && it.dueAt < now },
             drafts = database.faultProcessingDao().drafts(),
-            recentFaults = database.faultRecordDao().recent(3),
+            recentFaults = if (includeVoided) allFaults.take(3) else database.faultRecordDao().recent(3),
             allFaults = allFaults,
             restoreByFault = restoreByFault,
-            finishedHandovers = database.handoverItemDao().finished(),
+            finishedHandovers = if (includeVoided) {
+                database.handoverItemDao().finishedIncludingVoided()
+            } else {
+                database.handoverItemDao().finished()
+            },
             attendance = attendance,
             workView = view,
             includeVoided = includeVoided,
