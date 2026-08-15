@@ -30,6 +30,7 @@ import com.coda.workbench.platform.BackupFileStore
 import com.coda.workbench.platform.AlarmGateway
 import com.coda.workbench.platform.AndroidAlarmGateway
 import com.coda.workbench.platform.AndroidNotificationPoster
+import com.coda.workbench.platform.AppPreferencesStore
 import com.coda.workbench.platform.NotificationMaintenance
 import com.coda.workbench.platform.NotificationPoster
 import com.coda.workbench.platform.NotificationScheduler
@@ -182,6 +183,11 @@ object AppModule {
         PreferenceDataStoreFactory.create {
             context.preferencesDataStoreFile("coda_preferences")
         }
+
+    @Provides
+    @Singleton
+    fun provideAppPreferencesStore(dataStore: DataStore<Preferences>): AppPreferencesStore =
+        AppPreferencesStore(dataStore)
 
     // ---- M5 出勤/排班/通知 ----
 

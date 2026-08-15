@@ -5,6 +5,7 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AssignmentTurnedIn
+import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Cancel
@@ -80,6 +84,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
+import com.coda.workbench.ui.OnboardingViewModel
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -216,6 +222,8 @@ private fun CodaApp(
     BackHandler(enabled = route != AppRoute.Home) { goBack() }
     var showSplash by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) { delay(1600); showSplash = false }
+    val onboardingViewModel: OnboardingViewModel = hiltViewModel()
+    val showOnboarding by onboardingViewModel.show.collectAsStateWithLifecycle()
     Box(Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
@@ -332,6 +340,9 @@ private fun CodaApp(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
         )
+    }
+    AnimatedVisibility(visible = showOnboarding && !showSplash, enter = fadeIn()) {
+        OnboardingOverlay(onDismiss = onboardingViewModel::dismiss)
     }
     }
     restoreRecovery?.let { recovery ->
@@ -1345,6 +1356,63 @@ private fun statusColor(label: String): Color = when {
 }
 @Composable private fun EmptyNotice(text: String) { Text(text, Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
 @Composable private fun ErrorNotice(text: String) { Text(text, color = MaterialTheme.colorScheme.error) }
+
+/** 首次使用四步引导（记录工作/记录故障/写交接/备份恢复），首启显示一次。 */
+@Composable
+private fun OnboardingOverlay(onDismiss: () -> Unit) {
+    val steps = listOf(
+        Triple(Icons.Outlined.EditNote, "记录工作", "点一下，写一句话就保存。\n日期和出勤自动带上，不用选。"),
+        Triple(Icons.Outlined.ReportProblem, "记录故障", "设备名 + 现象，先存草稿不耽误干活；\n处理完再补原因和措施。"),
+        Triple(Icons.Outlined.AssignmentTurnedIn, "写交接", "要交班或跟进的事写这里，\n设个期限，到点提醒你。"),
+        Triple(Icons.Outlined.Backup, "备份恢复", "换手机或卸载前，先在设置里导出备份，\n数据一根不少。"),
+    )
+    var step by remember { mutableStateOf(0) }
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            Modifier.fillMaxSize().padding(24.dp).navigationBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(
+                Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(steps[step].first, contentDescription = null, Modifier.size(72.dp), tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(24.dp))
+                Text(steps[step].second, style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    steps[step].third,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                steps.indices.forEach { i ->
+                    Box(
+                        Modifier
+                            .size(if (i == step) 10.dp else 8.dp)
+                            .background(
+                                if (i == step) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                CircleShape,
+                            ),
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (step < steps.lastIndex) {
+                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text("跳过") }
+                    Button(onClick = { step++ }, modifier = Modifier.weight(1f)) { Text("下一步") }
+                } else {
+                    Button(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text("开始使用") }
+                }
+            }
+        }
+    }
+}
 
 /**
  * 表单页骨架（视觉稿 §1.3）：上方滚动内容 + 固定底部操作区（surface.content + 1dp 顶分隔线 + 含安全区）；
