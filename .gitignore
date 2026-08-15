@@ -1,0 +1,31 @@
+# Android/Gradle
+.gradle/
+.gradle-user/
+.gradle-m2/
+.gradle-test-home/
+.gradle-test-home-run/
+.android-user/
+.android-sdk-home/
+.android-adb-home/
+.kotlin/
+.m2/
+build/
+*/build/
+local.properties
+.idea/
+*.iml
+
+# Kotlin/Android Studio
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local output
+*.apk
+*.aab
+
+# Signing secrets — NEVER commit keystores
+*.jks
+*.keystore
+*.p12
+*.key

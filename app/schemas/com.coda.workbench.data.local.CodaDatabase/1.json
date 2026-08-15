@@ -1,0 +1,1003 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "ee0e02a7ca1c25250f7cdf3582ccf15f",
+    "entities": [
+      {
+        "tableName": "device",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `normalizedName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "normalizedName",
+            "columnName": "normalizedName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_device_normalizedName",
+            "unique": false,
+            "columnNames": [
+              "normalizedName"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_device_normalizedName` ON `${TABLE_NAME}` (`normalizedName`)"
+          }
+        ]
+      },
+      {
+        "tableName": "device_alias",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `deviceId` TEXT NOT NULL, `alias` TEXT NOT NULL, `normalizedAlias` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`deviceId`) REFERENCES `device`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceId",
+            "columnName": "deviceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "alias",
+            "columnName": "alias",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "normalizedAlias",
+            "columnName": "normalizedAlias",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_device_alias_deviceId",
+            "unique": false,
+            "columnNames": [
+              "deviceId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_device_alias_deviceId` ON `${TABLE_NAME}` (`deviceId`)"
+          },
+          {
+            "name": "index_device_alias_normalizedAlias",
+            "unique": true,
+            "columnNames": [
+              "normalizedAlias"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_device_alias_normalizedAlias` ON `${TABLE_NAME}` (`normalizedAlias`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "device",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "deviceId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "fault_record",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `deviceId` TEXT NOT NULL, `deviceNameSnapshot` TEXT NOT NULL, `reportedAt` INTEGER NOT NULL, `symptom` TEXT NOT NULL, `lifecycleStatus` TEXT NOT NULL, `lastProcessingId` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `voidedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`deviceId`) REFERENCES `device`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceId",
+            "columnName": "deviceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceNameSnapshot",
+            "columnName": "deviceNameSnapshot",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reportedAt",
+            "columnName": "reportedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "symptom",
+            "columnName": "symptom",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lifecycleStatus",
+            "columnName": "lifecycleStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastProcessingId",
+            "columnName": "lastProcessingId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "voidedAt",
+            "columnName": "voidedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_fault_record_deviceId_reportedAt",
+            "unique": false,
+            "columnNames": [
+              "deviceId",
+              "reportedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_fault_record_deviceId_reportedAt` ON `${TABLE_NAME}` (`deviceId`, `reportedAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "device",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "deviceId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "fault_processing",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `faultId` TEXT NOT NULL, `progressStatus` TEXT NOT NULL, `restoreResult` TEXT, `startedAt` INTEGER, `endedAt` INTEGER, `checkResult` TEXT, `initialJudgement` TEXT, `rootCause` TEXT, `measures` TEXT, `verification` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `completedAt` INTEGER, `voidedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`faultId`) REFERENCES `fault_record`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "faultId",
+            "columnName": "faultId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "progressStatus",
+            "columnName": "progressStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "restoreResult",
+            "columnName": "restoreResult",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "startedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "endedAt",
+            "columnName": "endedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "checkResult",
+            "columnName": "checkResult",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "initialJudgement",
+            "columnName": "initialJudgement",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "rootCause",
+            "columnName": "rootCause",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "measures",
+            "columnName": "measures",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "verification",
+            "columnName": "verification",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "voidedAt",
+            "columnName": "voidedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_fault_processing_faultId_createdAt",
+            "unique": false,
+            "columnNames": [
+              "faultId",
+              "createdAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_fault_processing_faultId_createdAt` ON `${TABLE_NAME}` (`faultId`, `createdAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "fault_record",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "faultId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "work_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `kind` TEXT NOT NULL, `content` TEXT NOT NULL, `workDate` TEXT NOT NULL, `attendanceId` TEXT, `attendanceKindSnapshot` TEXT, `attendanceStartAt` INTEGER, `attendanceEndAt` INTEGER, `productionGroupSnapshot` TEXT, `shiftIdSnapshot` TEXT, `shiftBusinessDateSnapshot` TEXT, `shiftTypeSnapshot` TEXT, `shiftStartAtSnapshot` INTEGER, `shiftEndAtSnapshot` INTEGER, `isShiftChangeSnapshot` INTEGER, `workResult` TEXT, `deviceId` TEXT, `area` TEXT, `deviceNameSnapshot` TEXT, `processingStartedAt` INTEGER, `processingEndedAt` INTEGER, `processedAt` INTEGER, `restoreResult` TEXT, `arrangementSource` TEXT, `sourceType` TEXT, `sourceId` TEXT, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `voidedAt` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workDate",
+            "columnName": "workDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attendanceId",
+            "columnName": "attendanceId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "attendanceKindSnapshot",
+            "columnName": "attendanceKindSnapshot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "attendanceStartAt",
+            "columnName": "attendanceStartAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "attendanceEndAt",
+            "columnName": "attendanceEndAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "productionGroupSnapshot",
+            "columnName": "productionGroupSnapshot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "shiftIdSnapshot",
+            "columnName": "shiftIdSnapshot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "shiftBusinessDateSnapshot",
+            "columnName": "shiftBusinessDateSnapshot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "shiftTypeSnapshot",
+            "columnName": "shiftTypeSnapshot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "shiftStartAtSnapshot",
+            "columnName": "shiftStartAtSnapshot",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "shiftEndAtSnapshot",
+            "columnName": "shiftEndAtSnapshot",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isShiftChangeSnapshot",
+            "columnName": "isShiftChangeSnapshot",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "workResult",
+            "columnName": "workResult",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deviceId",
+            "columnName": "deviceId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "area",
+            "columnName": "area",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deviceNameSnapshot",
+            "columnName": "deviceNameSnapshot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "processingStartedAt",
+            "columnName": "processingStartedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "processingEndedAt",
+            "columnName": "processingEndedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "processedAt",
+            "columnName": "processedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "restoreResult",
+            "columnName": "restoreResult",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "arrangementSource",
+            "columnName": "arrangementSource",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceType",
+            "columnName": "sourceType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "sourceId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "voidedAt",
+            "columnName": "voidedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_work_log_workDate_updatedAt",
+            "unique": false,
+            "columnNames": [
+              "workDate",
+              "updatedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_work_log_workDate_updatedAt` ON `${TABLE_NAME}` (`workDate`, `updatedAt`)"
+          },
+          {
+            "name": "index_work_log_attendanceId_updatedAt",
+            "unique": false,
+            "columnNames": [
+              "attendanceId",
+              "updatedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_work_log_attendanceId_updatedAt` ON `${TABLE_NAME}` (`attendanceId`, `updatedAt`)"
+          }
+        ]
+      },
+      {
+        "tableName": "handover_item",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `summary` TEXT NOT NULL, `status` TEXT NOT NULL, `nextAction` TEXT NOT NULL, `dueKind` TEXT NOT NULL, `dueAt` INTEGER, `originType` TEXT NOT NULL, `sourceType` TEXT, `sourceId` TEXT, `handoverGroup` TEXT, `potentialHazardNote` TEXT, `lastOverdueNoticeDate` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `completedAt` INTEGER, `voidedAt` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "summary",
+            "columnName": "summary",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nextAction",
+            "columnName": "nextAction",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dueKind",
+            "columnName": "dueKind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dueAt",
+            "columnName": "dueAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "originType",
+            "columnName": "originType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceType",
+            "columnName": "sourceType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "sourceId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "handoverGroup",
+            "columnName": "handoverGroup",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "potentialHazardNote",
+            "columnName": "potentialHazardNote",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastOverdueNoticeDate",
+            "columnName": "lastOverdueNoticeDate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "voidedAt",
+            "columnName": "voidedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_handover_item_status_dueAt",
+            "unique": false,
+            "columnNames": [
+              "status",
+              "dueAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_handover_item_status_dueAt` ON `${TABLE_NAME}` (`status`, `dueAt`)"
+          }
+        ]
+      },
+      {
+        "tableName": "attendance",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `businessDate` TEXT NOT NULL, `kind` TEXT NOT NULL, `startAt` INTEGER NOT NULL, `endAt` INTEGER, `productionGroup` TEXT, `shiftId` TEXT, `shiftBusinessDate` TEXT, `shiftType` TEXT, `shiftStartAt` INTEGER, `shiftEndAt` INTEGER, `isShiftChange` INTEGER NOT NULL, `isCurrent` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "businessDate",
+            "columnName": "businessDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startAt",
+            "columnName": "startAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endAt",
+            "columnName": "endAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "productionGroup",
+            "columnName": "productionGroup",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "shiftId",
+            "columnName": "shiftId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "shiftBusinessDate",
+            "columnName": "shiftBusinessDate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "shiftType",
+            "columnName": "shiftType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "shiftStartAt",
+            "columnName": "shiftStartAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "shiftEndAt",
+            "columnName": "shiftEndAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isShiftChange",
+            "columnName": "isShiftChange",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isCurrent",
+            "columnName": "isCurrent",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_attendance_startAt_endAt",
+            "unique": false,
+            "columnNames": [
+              "startAt",
+              "endAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_attendance_startAt_endAt` ON `${TABLE_NAME}` (`startAt`, `endAt`)"
+          }
+        ]
+      },
+      {
+        "tableName": "monthly_shift_plan",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `businessMonth` TEXT NOT NULL, `groupADayStart` INTEGER NOT NULL, `groupBDayStart` INTEGER NOT NULL, `confirmedAt` INTEGER, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "businessMonth",
+            "columnName": "businessMonth",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupADayStart",
+            "columnName": "groupADayStart",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupBDayStart",
+            "columnName": "groupBDayStart",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "confirmedAt",
+            "columnName": "confirmedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_monthly_shift_plan_businessMonth",
+            "unique": true,
+            "columnNames": [
+              "businessMonth"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_monthly_shift_plan_businessMonth` ON `${TABLE_NAME}` (`businessMonth`)"
+          }
+        ]
+      },
+      {
+        "tableName": "shift_slot",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `planId` TEXT NOT NULL, `businessDate` TEXT NOT NULL, `group` TEXT NOT NULL, `shiftType` TEXT NOT NULL, `startAt` INTEGER NOT NULL, `endAt` INTEGER NOT NULL, `isShiftChange` INTEGER NOT NULL, `source` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`planId`) REFERENCES `monthly_shift_plan`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planId",
+            "columnName": "planId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "businessDate",
+            "columnName": "businessDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "group",
+            "columnName": "group",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shiftType",
+            "columnName": "shiftType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startAt",
+            "columnName": "startAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endAt",
+            "columnName": "endAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isShiftChange",
+            "columnName": "isShiftChange",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_shift_slot_planId",
+            "unique": false,
+            "columnNames": [
+              "planId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_shift_slot_planId` ON `${TABLE_NAME}` (`planId`)"
+          },
+          {
+            "name": "index_shift_slot_businessDate_group_shiftType",
+            "unique": true,
+            "columnNames": [
+              "businessDate",
+              "group",
+              "shiftType"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_shift_slot_businessDate_group_shiftType` ON `${TABLE_NAME}` (`businessDate`, `group`, `shiftType`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "monthly_shift_plan",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "planId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "backup_import_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `endedAt` INTEGER, `fileSha256` TEXT NOT NULL, `result` TEXT NOT NULL, `countsJson` TEXT, `errorMessage` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "startedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endedAt",
+            "columnName": "endedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "fileSha256",
+            "columnName": "fileSha256",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "result",
+            "columnName": "result",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "countsJson",
+            "columnName": "countsJson",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "errorMessage",
+            "columnName": "errorMessage",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ee0e02a7ca1c25250f7cdf3582ccf15f')"
+    ]
+  }
+}
