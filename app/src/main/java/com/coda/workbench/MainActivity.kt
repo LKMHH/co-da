@@ -1016,6 +1016,10 @@ private fun WorkLogDetailScreen(
             log.arrangementSource?.takeIf { it.isNotBlank() }?.let { Text("安排来源：$it") }
             log.attendanceKindSnapshot?.let { Text("出勤：${attendanceKindLabel(it)}") }
             log.restoreResult?.let { Text("恢复结果：${restoreLabel(RestoreResult.valueOf(it))}") }
+            if (log.kind == "FAULT_DERIVED") {
+                log.processingStartedAt?.let { Text("处理开始：${formatEpochMillis(it)}") }
+                log.processingEndedAt?.let { Text("处理结束：${formatEpochMillis(it)}") }
+            }
             Text("状态：${if (log.voidedAt == null) "已记录" else "已作废"}")
             if (log.kind == "MANUAL" && log.voidedAt == null) {
                 Button(onClick = { onEdit(log.id) }, modifier = Modifier.fillMaxWidth()) { Text("编辑工作记录") }
@@ -1256,6 +1260,9 @@ private fun statusIcon(status: String): ImageVector = when (status) {
     else -> Icons.Outlined.Warning
 }
 private fun restoreLabel(result: RestoreResult): String = when (result) { RestoreResult.RESTORED -> "已恢复"; RestoreResult.TEMPORARY -> "临时恢复"; RestoreResult.PARTIAL -> "部分恢复"; RestoreResult.NOT_RESTORED -> "未恢复"; RestoreResult.UNKNOWN -> "无法确认" }
+private fun formatEpochMillis(millis: Long): String =
+    Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault())
+        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.SIMPLIFIED_CHINESE))
 private fun attendanceKindLabel(kind: String): String = when (kind) { "TOP_DAY" -> "顶班（日）"; "TOP_NIGHT" -> "顶班（夜）"; "CUSTOM" -> "自定义出勤"; else -> "普通班 08:00-18:00" }
 
 /** 首页出勤卡片：显示当前出勤的真实类型、班组与实际起止时间（出勤修正后可见变化）。 */

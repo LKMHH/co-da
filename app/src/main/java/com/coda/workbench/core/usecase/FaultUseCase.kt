@@ -219,10 +219,19 @@ class FaultUseCase(
             val now = clock.millis()
             val shiftBusinessDate = attendance.shiftBusinessDate ?: attendance.businessDate
             val workDate = shiftBusinessDate
+            val summaryParts = listOfNotNull(
+                processing.rootCause?.trim()?.takeIf { it.isNotEmpty() },
+                processing.measures?.trim()?.takeIf { it.isNotEmpty() },
+            )
+            val derivedContent = if (summaryParts.isEmpty()) {
+                fault.symptom
+            } else {
+                fault.symptom + "\n处理摘要：" + summaryParts.joinToString("；")
+            }
             val workLog = existingWorkLog ?: WorkLogEntity(
                 id = UUID.randomUUID().toString(),
                 kind = "FAULT_DERIVED",
-                content = fault.symptom,
+                content = derivedContent,
                 workDate = workDate,
                 attendanceId = attendance.id,
                 attendanceKindSnapshot = attendance.kind,

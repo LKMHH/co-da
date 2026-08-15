@@ -201,6 +201,34 @@ class FaultUseCaseTest {
         assertNotNull(database!!.faultProcessingDao().findById(processing.id)!!.voidedAt)
     }
 
+    @Test
+    fun derivedWorkLogContentIncludesSummaryWhenRootCauseOrMeasuresPresent() = runBlocking {
+        val useCase = newStartedUseCase(symptom = "信号弱")
+        val processing = database!!.faultProcessingDao().findLatest()!!
+        useCase.updateProcessingDetails(
+            processing.id,
+            checkResult = null,
+            initialJudgement = null,
+            rootCause = "馈线松动",
+            measures = "紧固并复测",
+            verification = null,
+        )
+        useCase.finishProcessing(processing.id, RestoreResult.RESTORED)
+
+        val log = database!!.workLogDao().findBySource(FaultUseCase.SOURCE_TYPE, processing.id)!!
+        assertEquals("信号弱\n处理摘要：馈线松动；紧固并复测", log.content)
+    }
+
+    @Test
+    fun derivedWorkLogContentStaysSymptomWhenNoSummary() = runBlocking {
+        val useCase = newStartedUseCase(symptom = "信号弱")
+        val processing = database!!.faultProcessingDao().findLatest()!!
+        useCase.finishProcessing(processing.id, RestoreResult.RESTORED)
+
+        val log = database!!.workLogDao().findBySource(FaultUseCase.SOURCE_TYPE, processing.id)!!
+        assertEquals("信号弱", log.content)
+    }
+
     private suspend fun newStartedUseCase(
         deviceName: String = "设备甲",
         symptom: String = "信号弱",
