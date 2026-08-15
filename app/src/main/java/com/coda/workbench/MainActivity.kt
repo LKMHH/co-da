@@ -1237,7 +1237,7 @@ private fun statusIcon(status: String): ImageVector = when (status) {
     "CANCELED", "VOIDED" -> Icons.Outlined.Cancel
     else -> Icons.Outlined.Warning
 }
-private fun restoreLabel(result: RestoreResult): String = when (result) { RestoreResult.RESTORED -> "已恢复"; RestoreResult.TEMPORARY -> "临时恢复"; RestoreResult.PARTIAL -> "部分恢复"; RestoreResult.NOT_RESTORED -> "未恢复"; RestoreResult.UNKNOWN -> "结果未知" }
+private fun restoreLabel(result: RestoreResult): String = when (result) { RestoreResult.RESTORED -> "已恢复"; RestoreResult.TEMPORARY -> "临时恢复"; RestoreResult.PARTIAL -> "部分恢复"; RestoreResult.NOT_RESTORED -> "未恢复"; RestoreResult.UNKNOWN -> "无法确认" }
 private fun attendanceKindLabel(kind: String): String = when (kind) { "TOP_DAY" -> "顶班（日）"; "TOP_NIGHT" -> "顶班（夜）"; "CUSTOM" -> "自定义出勤"; else -> "普通班 08:00-18:00" }
 
 /** 首页出勤卡片：显示当前出勤的真实类型、班组与实际起止时间（出勤修正后可见变化）。 */
