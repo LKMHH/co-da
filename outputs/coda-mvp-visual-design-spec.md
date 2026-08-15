@@ -2,11 +2,11 @@
 
 > 文档状态：视觉稿 v1.1（冻结修订）
 > 
-> 产品基线（v1.0，不修改）：`C:\Users\74526\Documents\Codex\2026-08-14\mvp-2\outputs\electrician-workbench-mvp-product-design.md`
+> 产品基线（v1.0，不修改）：`outputs/electrician-workbench-mvp-product-design.md`
 > 
-> UI 基线：v1.1 `C:\Users\74526\Documents\Codex\2026-08-14\019ffec2-1c7b-7791-8548-df2d59cfe1f3-2\outputs\coda-mvp-ui-design-spec.md`
+> UI 基线（v1.1）：`outputs/coda-mvp-ui-design-spec.md`
 > 
-> 技术基线：v1.1.1 `C:\Users\74526\Documents\Codex\2026-08-14\019ffec2-1c7b-7791-8548-df2d59cfe1f3-2\outputs\coda-mvp-technical-design-draft.md`
+> 技术基线（v1.1.1）：`outputs/coda-mvp-technical-design-draft.md`
 
 本稿只调整视觉表现、布局、组件和交互呈现，不修改产品范围、业务状态、数据规则或技术接口。所有状态、字段、入口和文案均以产品 v1.0 与 UI/技术 v1.1 基线为准；技术稿未定义的动作在文末列为“待技术确认”，不在本稿中发明新 UseCase。
 

@@ -1,8 +1,9 @@
 # CODA｜现场工作助手 MVP UI 设计规格
 
 > 文档状态：v1.1（冻结修订）
-> 产品基线（v1.0，不修改）：[electrician-workbench-mvp-product-design.md](C:/Users/74526/Documents/Codex/2026-08-14/mvp-2/outputs/electrician-workbench-mvp-product-design.md)
-> 技术基线（v1.1.1）：[coda-mvp-technical-design-draft.md](C:/Users/74526/Documents/Codex/2026-08-14/019ffec2-1c7b-7791-8548-df2d59cfe1f3-2/outputs/coda-mvp-technical-design-draft.md)
+> 产品基线（v1.0，不修改）：`outputs/electrician-workbench-mvp-product-design.md`
+> 技术基线（v1.1.1）：`outputs/coda-mvp-technical-design-draft.md`
+> 视觉稿（v1.1）：`outputs/coda-mvp-visual-design-spec.md`
 > 设计目标：把已确认的产品流程转换成可评审、可实现的 Android UI 规格。
 
 ## 1. 设计定位

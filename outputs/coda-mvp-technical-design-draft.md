@@ -1,9 +1,9 @@
 # CODA｜现场工作助手 MVP 技术设计稿
 
-> 文档状态：v1.1.1（v1.1 冻结修订 + 已批准的 v1.1.1 实现等价修订）
-> 产品基线：[electrician-workbench-mvp-product-design.md](C:/Users/74526/Documents/Codex/2026-08-14/mvp-2/outputs/electrician-workbench-mvp-product-design.md)
-> 技术审查参考：[electrician-workbench-design-review.md](C:/Users/74526/Documents/Codex/2026-08-14/https-github-com-deepseek-ai-deepseek/outputs/electrician-workbench-design-review.md)
-> UI 规格参考（v1.1）：[coda-mvp-ui-design-spec.md](C:/Users/74526/Documents/Codex/2026-08-14/019ffec2-1c7b-7791-8548-df2d59cfe1f3-2/outputs/coda-mvp-ui-design-spec.md)
+> 文档状态：v1.1.1（v1.1 冻结修订 + 已批准的 v1.1.1 实现等价修订；M7 收口补 v1.1.2 等价修订见 §2.4）
+> 产品基线（v1.0，不修改）：`outputs/electrician-workbench-mvp-product-design.md`
+> UI 规格参考（v1.1）：`outputs/coda-mvp-ui-design-spec.md`
+> 视觉稿参考（v1.1）：`outputs/coda-mvp-visual-design-spec.md`
 > 适用范围：CODA 个人离线 Android MVP
 > 本稿目标：将产品定稿转换为可开发、可测试的技术规格。
 
@@ -38,8 +38,8 @@
 | 设置 | Jetpack DataStore Preferences | 只保存通知开关等非业务偏好 |
 | 异步 | Kotlin Coroutines + Flow | DAO 通过 Flow 暴露列表和首页聚合数据 |
 | 依赖注入 | Hilt | 统一组装 Database、DAO、Repository、Clock 和 ViewModel |
-| 本地提醒 | 非精确 AlarmManager + WorkManager | 到期提醒允许系统漂移，不申请精确闹钟权限；WorkManager 用于重建和补偿检查 |
-| 序列化 | kotlinx.serialization | 备份 JSON 使用版本化 DTO，不直接序列化 Room Entity |
+| 本地提醒 | 非精确 AlarmManager（见 §2.4-1） | 到期提醒允许系统漂移，不申请精确闹钟权限；不引入 WorkManager，补偿由自续期维护闹钟承担 |
+| 序列化 | org.json（见 §2.4-2） | 备份 JSON 使用版本化 DTO，不直接序列化 Room Entity |
 | 文件访问 | Storage Access Framework | 仅用于备份导入/导出，不持久化外部 URI 作为业务关系 |
 
 默认 `minSdk` 为 26，`targetSdk` 和依赖版本使用项目初始化时的稳定版本。若现场设备低于 API 26，需要在开工前单独评估 Java 时间 API 脱糖，不在本稿中隐式支持。
@@ -79,6 +79,14 @@ Hilt 只负责依赖组装，不承载业务规则。Database、DAO 和 Reposito
 2. **分层依赖（对应 §2.2）**：MVP 认可"用例直连数据层"的单模块等价形态（`core/usecase` 注入 `CodaDatabase`/DAO，Hilt 组合根组装）。约束：①UI 层不得绕过用例直接使用 DAO；②跨层不得出现反向依赖；③出现第二个数据源（网络同步，v2.0）前必须抽 Repository 接口。
 3. **导航与平台目录（对应 §2.1、§2.2）**：MVP 认可手写路由状态机（`AppRoute` 密封接口 + 返回栈，支持逐级返回与系统返回手势）。约束：①M5 通知调度器、M7 文件选择器必须放入新建的 `platform/` 包并保持可测试注入；②M6 收口时评估页面数，若 MainActivity 不可维护再引入 navigation-compose。
 4. **首页查询模式（对应 §6.1）**：MVP 认可"一次性快照 + 页面进入刷新"模式。约束：出现跨页面实时联动需求时切换 Flow 订阅。
+
+### 2.4 v1.1.2 修订（M7 收口，已批准）
+
+本节延续 §2.3 的口径，把 M5/M7 交付采用的等价实现声明为认可，不改变任何产品范围、数据字段或业务规则。
+
+1. **本地提醒实现（对应 §2.1、§9.1）**：MVP 认可"纯非精确 AlarmManager"为"非精确 AlarmManager + WorkManager"的等价实现。到期/下一班提醒用一次性非精确闹钟（`setAndAllowWhileIdle`），逾期去重与每月 1 号排班提示由自续期每日维护闹钟（每日 09:00，接收器处理后重排下一次）承载，BOOT_COMPLETED/TIME_SET/TIMEZONE_CHANGED 后从数据库重建。约束：①不引入 WorkManager 依赖；②不申请 `SCHEDULE_EXACT_ALARM`；③任何接收器路径不得因业务异常崩溃进程。
+2. **备份序列化（对应 §2.1、§10.1）**：MVP 认可 Android 内置 `org.json` 为 kotlinx.serialization 的等价实现，备份文件仍使用独立版本化 DTO（§10.1），不直接序列化 Room Entity。约束：①协议 v1 字段名视为冻结，变更必须升级 `formatVersion`；②不新增第三方序列化依赖。
+3. **导入读取方式（对应 §10.3）**：MVP 认可"内存全量读取（64MB 上限）"为"先复制到临时目录"的等价实现，校验在完整拷贝之后、任何数据库写入之前完成。
 
 ## 3. 领域模型与数据库
 
