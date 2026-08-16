@@ -1372,10 +1372,6 @@ private fun DeviceEditScreen(modifier: Modifier, deviceId: String, viewModel: De
     }
 }
 
-@Composable
-private fun SettingsScreenOld(modifier: Modifier) {
-}
-
 @Composable private fun StatusBanner(label: String, icon: ImageVector) { val color = statusColor(label); Card(modifier = Modifier.fillMaxWidth()) { Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) { Icon(icon, contentDescription = null, tint = color); Text(label, fontWeight = FontWeight.SemiBold, color = color) } } }
 
 /** 状态语义色（视觉稿 §1.1）：按冻结标签字面量映射，文字与图标同色。 */

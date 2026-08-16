@@ -50,7 +50,7 @@ class HomeRepository(
             database.monthlyShiftPlanDao().findByMonth(java.time.YearMonth.from(today).toString())
                 ?.confirmedAt
         val logs = when {
-            view == HomeWorkView.CURRENT_ATTENDANCE && attendance != null -> if (includeVoided) {
+            view == HomeWorkView.CURRENT_ATTENDANCE -> if (includeVoided) {
                 database.workLogDao().forAttendanceIncludingVoided(attendance.id)
             } else {
                 database.workLogDao().forAttendance(attendance.id)
