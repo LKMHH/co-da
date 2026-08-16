@@ -18,6 +18,9 @@ interface DeviceDao {
     @Query("SELECT * FROM device WHERE normalizedName = :normalizedName LIMIT 1")
     suspend fun findByNormalizedName(normalizedName: String): DeviceEntity?
 
+    @Query("SELECT * FROM device WHERE normalizedName = :normalizedName AND id != :excludeId LIMIT 1")
+    suspend fun findByNormalizedNameExcluding(normalizedName: String, excludeId: String): DeviceEntity?
+
     @Query("SELECT * FROM device WHERE isActive = 1 ORDER BY normalizedName")
     fun observeActive(): Flow<List<DeviceEntity>>
 
@@ -57,6 +60,9 @@ interface DeviceAliasDao {
 
     @Query("SELECT * FROM device_alias WHERE deviceId = :deviceId ORDER BY normalizedAlias")
     fun observeForDevice(deviceId: String): Flow<List<DeviceAliasEntity>>
+
+    @Query("SELECT * FROM device_alias WHERE deviceId = :deviceId AND normalizedAlias = :normalizedAlias LIMIT 1")
+    suspend fun findByValue(deviceId: String, normalizedAlias: String): DeviceAliasEntity?
 
     @Query("DELETE FROM device_alias WHERE deviceId = :deviceId AND alias = :alias")
     suspend fun deleteByValue(deviceId: String, alias: String)

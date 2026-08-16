@@ -277,6 +277,7 @@ private fun CodaApp(
             is AppRoute.FaultDetail -> FaultDetailScreen(
                 modifier = Modifier.padding(padding),
                 faultId = current.faultId,
+                onWorkLogDetail = { navigate(AppRoute.WorkLogDetail(it)) },
             )
             AppRoute.Search -> SearchScreen(
                 Modifier.padding(padding),
@@ -618,7 +619,7 @@ private fun FaultEntryScreen(modifier: Modifier, onSaved: (String) -> Unit, view
 }
 
 @Composable
-private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: FaultDetailViewModel = hiltViewModel()) {
+private fun FaultDetailScreen(modifier: Modifier, faultId: String, onWorkLogDetail: (String) -> Unit, viewModel: FaultDetailViewModel = hiltViewModel()) {
     LaunchedEffect(faultId) { viewModel.load(faultId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snapshot = state.snapshot
@@ -744,12 +745,14 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, viewModel: Fa
                     }
                 }
                 detail.derivedLogs.forEach { log ->
-                    WorkItem(
-                        Icons.Outlined.CheckCircle,
-                        "派生工作记录",
-                        log.content,
-                        if (log.voidedAt == null) "已记录" else "已作废",
-                    )
+                    Card(modifier = Modifier.fillMaxWidth(), onClick = { onWorkLogDetail(log.id) }) {
+                        WorkItem(
+                            Icons.Outlined.CheckCircle,
+                            "派生工作记录",
+                            log.content,
+                            if (log.voidedAt == null) "已记录" else "已作废",
+                        )
+                    }
                 }
             }
         }
@@ -1322,7 +1325,7 @@ private fun DeviceListScreen(modifier: Modifier, onDeviceDetail: (String) -> Uni
             title = { Text("添加设备") },
             text = { OutlinedTextField(newName, { newName = it }, label = { Text("设备名称") }, singleLine = true) },
             confirmButton = {
-                CodaButton(onClick = { scope.launch { viewModel.create(newName) { addDialog = false; newName = "" } } }, enabled = newName.isNotBlank()) { Text("添加") }
+                CodaButton(onClick = { scope.launch { viewModel.create(newName) { addDialog = false; newName = "" } } }, enabled = newName.isNotBlank() && !viewModel.state.value.busy) { Text("添加") }
             },
             dismissButton = { TextButton(onClick = { addDialog = false }) { Text("取消") } },
         )
@@ -1347,17 +1350,17 @@ private fun DeviceEditScreen(modifier: Modifier, deviceId: String, viewModel: De
             aliases.forEach { alias ->
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(alias.alias, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { scope.launch { viewModel.removeAlias(it.id, alias.alias) } }) { Text("移除", color = MaterialTheme.colorScheme.error) }
+                    TextButton(onClick = { scope.launch { viewModel.removeAlias(it.id, alias.alias) } }, enabled = !viewModel.state.value.busy) { Text("移除", color = MaterialTheme.colorScheme.error) }
                 }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(newAlias, { newAlias = it }, Modifier.weight(1f), label = { Text("新别名") }, singleLine = true)
-                CodaButton(onClick = { scope.launch { viewModel.addAlias(it.id, newAlias); newAlias = "" } }, enabled = newAlias.isNotBlank()) { Text("添加") }
+                CodaButton(onClick = { scope.launch { viewModel.addAlias(it.id, newAlias); newAlias = "" } }, enabled = newAlias.isNotBlank() && !viewModel.state.value.busy) { Text("添加") }
             }
             if (it.isActive) {
-                CodaOutlinedButton(onClick = { scope.launch { viewModel.setActive(it.id, false) } }, modifier = Modifier.fillMaxWidth()) { Text("停用设备") }
+                CodaOutlinedButton(onClick = { scope.launch { viewModel.setActive(it.id, false) } }, enabled = !viewModel.state.value.busy, modifier = Modifier.fillMaxWidth()) { Text("停用设备") }
             } else {
-                CodaButton(onClick = { scope.launch { viewModel.setActive(it.id, true) } }, modifier = Modifier.fillMaxWidth()) { Text("重新启用") }
+                CodaButton(onClick = { scope.launch { viewModel.setActive(it.id, true) } }, enabled = !viewModel.state.value.busy, modifier = Modifier.fillMaxWidth()) { Text("重新启用") }
             }
         }
         if (device == null && !viewModel.state.value.busy) EmptyNotice("设备不存在")

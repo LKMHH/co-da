@@ -22,6 +22,7 @@ class DeviceUseCase(
     suspend fun create(name: String): String {
         require(name.isNotBlank()) { "设备名称不能为空" }
         val normalized = TextRules.normalize(name)
+        if (database.deviceDao().findByNormalizedName(normalized) != null) error("设备名称已存在")
         val now = clock.millis()
         val entity = DeviceEntity(
             id = UUID.randomUUID().toString(),
@@ -38,12 +39,14 @@ class DeviceUseCase(
     suspend fun rename(id: String, name: String) {
         require(name.isNotBlank()) { "设备名称不能为空" }
         val normalized = TextRules.normalize(name)
+        if (database.deviceDao().findByNormalizedNameExcluding(normalized, id) != null) error("设备名称已存在")
         database.deviceDao().updateName(id, normalized, normalized, clock.millis())
     }
 
     suspend fun addAlias(deviceId: String, alias: String) {
         require(alias.isNotBlank()) { "别名不能为空" }
         val normalized = TextRules.normalize(alias)
+        if (database.deviceAliasDao().findByValue(deviceId, normalized) != null) error("该别名已存在")
         database.deviceAliasDao().insert(
             DeviceAliasEntity(
                 id = UUID.randomUUID().toString(),
