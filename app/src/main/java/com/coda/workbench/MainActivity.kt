@@ -687,10 +687,14 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, onWorkLogDeta
                 }
             } else if (processing != null && processing.progressStatus in listOf("IN_PROGRESS", "PENDING_VERIFICATION")) {
                 Text("处理记录：${processingStatusLabel(processing.progressStatus)}", color = statusColor(processingStatusLabel(processing.progressStatus)))
-                DetailField("检查结果", check) { check = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
-                DetailField("初步判断", judgement) { judgement = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
-                DetailField("最终原因", cause) { cause = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
-                DetailField("处理措施", measures) { measures = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
+                var detailsExpanded by remember { mutableStateOf(false) }
+                TextButton(onClick = { detailsExpanded = !detailsExpanded }) { Text(if (detailsExpanded) "收起处理详情" else "处理详情（选填）›") }
+                if (detailsExpanded) {
+                    DetailField("检查结果", check) { check = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
+                    DetailField("初步判断", judgement) { judgement = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
+                    DetailField("最终原因", cause) { cause = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
+                    DetailField("处理措施", measures) { measures = it; viewModel.update(check, judgement, cause, measures, processing.verification) }
+                }
                 var menu by remember { mutableStateOf(false) }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     Box(contentAlignment = Alignment.TopEnd) {
@@ -703,19 +707,19 @@ private fun FaultDetailScreen(modifier: Modifier, faultId: String, onWorkLogDeta
             } else {
                 Text("处理记录：${processing?.let { processingStatusLabel(it.progressStatus) } ?: "暂无"}${if (processing?.voidedAt != null) "（已作废）" else ""}")
                 processing?.let { p ->
-                    listOf(
+                    val filled = listOf(
                         "检查结果" to p.checkResult,
                         "初步判断" to p.initialJudgement,
                         "最终原因" to p.rootCause,
                         "处理措施" to p.measures,
                         "验证结果" to p.verification,
-                    ).forEach { (label, value) ->
-                        val display = value?.takeIf { it.isNotBlank() } ?: "未填写"
-                        Text(
-                            "$label：$display",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (value.isNullOrBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                        )
+                    ).filter { !it.second.isNullOrBlank() }
+                    if (filled.isEmpty()) {
+                        Text("处理详情：未填写", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        filled.forEach { (label, value) ->
+                            Text("$label：$value", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                        }
                     }
                 }
                 val activeDerivedLog = detail.derivedLogs.firstOrNull { it.voidedAt == null }
