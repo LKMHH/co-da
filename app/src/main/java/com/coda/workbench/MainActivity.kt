@@ -261,6 +261,7 @@ private fun CodaApp(
                 onManual = { navigate(AppRoute.ManualWork) },
                 onSearch = { navigate(AppRoute.Search) },
                 onFaultDetail = { navigate(AppRoute.FaultDetail(it)) },
+                onWorkLogDetail = { navigate(AppRoute.WorkLogDetail(it)) },
                 onHandover = { navigate(AppRoute.Handover) },
                 onHandoverCreate = { navigate(AppRoute.HandoverCreate) },
                 onHandoverDetail = { navigate(AppRoute.HandoverDetail(it)) },
@@ -392,6 +393,7 @@ private fun HomeScreen(
     onManual: () -> Unit,
     onSearch: () -> Unit,
     onFaultDetail: (String) -> Unit,
+    onWorkLogDetail: (String) -> Unit,
     onHandover: () -> Unit,
     onHandoverCreate: () -> Unit,
     onHandoverDetail: (String) -> Unit,
@@ -415,6 +417,12 @@ private fun HomeScreen(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        val todayLabel = remember { LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.SIMPLIFIED_CHINESE)) }
+        Text(
+            "$todayLabel · ${snapshot?.attendance?.let { attendanceSummaryLabel(it) } ?: "普通班 08:00-18:00"}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         AttendanceCard(snapshot?.attendance?.let { attendanceSummaryLabel(it) } ?: "普通班 08:00-18:00", onAttendance)
         if (snapshot != null && snapshot.monthShiftConfirmedAt == null) {
             ShiftConfirmBanner(onOpenSchedule)
@@ -431,16 +439,18 @@ private fun HomeScreen(
                 if (state.view == HomeWorkView.CURRENT_ATTENDANCE) "当前出勤还没有工作记录" else "今天还没有工作记录",
             )
             home.workLogs.take(3).forEach { log ->
-                WorkItem(
-                    icon = if (log.kind == "FAULT_DERIVED") Icons.Outlined.Warning else Icons.Outlined.Build,
-                    title = log.deviceNameSnapshot ?: log.content,
-                    subtitle = log.content,
-                    status = if (log.voidedAt == null) "已记录" else "已作废",
-                )
+                Card(modifier = Modifier.fillMaxWidth(), onClick = { onWorkLogDetail(log.id) }) {
+                    WorkItem(
+                        icon = if (log.kind == "FAULT_DERIVED") Icons.Outlined.Warning else Icons.Outlined.Build,
+                        title = log.deviceNameSnapshot ?: log.content,
+                        subtitle = log.content,
+                        status = if (log.voidedAt == null) "已记录" else "已作废",
+                    )
+                }
             }
             SectionTitle("待跟进", (home.pendingUnfinished.size + home.pendingUpcoming.size + home.pendingOverdue.size).toString(), onHandover)
             val handovers = (home.pendingOverdue + home.pendingUnfinished + home.pendingUpcoming).take(3)
-            if (handovers.isEmpty()) EmptyNotice("暂无待跟进事项")
+            if (handovers.isEmpty()) EmptyNotice("当前没有待跟进事项")
             handovers.forEach { item ->
                 val status = if (item.voidedAt != null) "已作废" else overdueLabel(item, state.nowMillis)
                 Card(modifier = Modifier.fillMaxWidth(), onClick = { onHandoverDetail(item.id) }) {
@@ -602,7 +612,7 @@ private fun FaultEntryScreen(modifier: Modifier, onSaved: (String) -> Unit, view
             },
             modifier = Modifier.fillMaxWidth(), label = { Text("接报时间") }, singleLine = true,
         )
-        OutlinedTextField(state.symptom, viewModel::setSymptom, Modifier.fillMaxWidth().height(132.dp), label = { Text("现象*") })
+        OutlinedTextField(state.symptom, viewModel::setSymptom, Modifier.fillMaxWidth().height(132.dp), label = { Text("故障现象*") })
         state.error?.let { ErrorNotice(it) }
     }
 }
