@@ -58,6 +58,7 @@ class SearchRepository(
                 title = log.deviceNameSnapshot ?: "普通工作",
                 snippet = log.content,
                 statusText = if (log.voidedAt == null) "已记录" else "已作废",
+                extraTag = if (log.kind == "FAULT_DERIVED") "故障派生" else null,
                 sortTime = log.updatedAt,
                 expandedMatch = false,
             )
@@ -164,6 +165,7 @@ class SearchRepository(
                 title = log.deviceNameSnapshot ?: "普通工作",
                 snippet = log.content,
                 statusText = if (log.voidedAt == null) "已记录" else "已作废",
+                extraTag = if (log.kind == "FAULT_DERIVED") "故障派生" else null,
                 sortTime = log.updatedAt,
                 expandedMatch = !workLogContainsOriginal(log, normalized),
             )

@@ -69,6 +69,11 @@ fun SearchScreen(
                 )
             }
         }
+        Text(
+            "故障=设备问题；工作=你干的活（处理故障会自动生成一条工作记录）；交接=待跟进事项",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Text("日期范围", style = MaterialTheme.typography.labelLarge)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SearchDatePreset.entries.forEach { preset ->
@@ -186,7 +191,12 @@ private fun SearchResultRow(result: SearchResult, onClick: () -> Unit) {
                 if (result.expandedMatch) {
                     Text("已扩展匹配（同义词或设备别名）", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                 }
-                Text(result.statusText, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(result.statusText, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    result.extraTag?.let { tag ->
+                        Text(tag, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
             }
         }
     }

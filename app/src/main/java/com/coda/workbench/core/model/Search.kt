@@ -21,6 +21,8 @@ data class SearchResult(
     val title: String,
     val snippet: String,
     val statusText: String,
+    /** 附加标注（如故障派生工作记录的"故障派生"），帮助用户理解记录来源。 */
+    val extraTag: String? = null,
     /** updatedAt，结果按此倒序。 */
     val sortTime: Long,
     /** 原文未命中、经同义词或设备别名扩展命中时为 true，UI 显示"已扩展匹配"。 */

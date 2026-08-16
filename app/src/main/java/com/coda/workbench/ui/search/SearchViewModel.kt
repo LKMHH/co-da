@@ -53,9 +53,17 @@ class SearchViewModel @Inject constructor(
     private fun loadRecent() {
         viewModelScope.launch {
             runCatching { useCase.recent().first() }
-                .onSuccess { _state.value = _state.value.copy(recent = it) }
+                .onSuccess { all ->
+                    _state.value = _state.value.copy(recent = applyTypeFilter(all))
+                }
                 .onFailure { /* 最近更新加载失败不阻塞输入 */ }
         }
+    }
+
+    /** 空查询时"最近更新"也响应记录类型筛选（否则筛选对空查询完全无效，看起来像失灵）。 */
+    private fun applyTypeFilter(list: List<SearchResult>): List<SearchResult> {
+        val types = _state.value.recordTypes
+        return if (types.isEmpty()) list else list.filter { it.type in types }
     }
 
     fun setQuery(value: String) {
