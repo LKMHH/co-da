@@ -129,7 +129,25 @@ fun SearchScreen(
             Switch(checked = state.includeVoided, onCheckedChange = viewModel::setIncludeVoided)
         }
         when {
-            state.query.isBlank() -> Text("输入设备名称或关键词开始查找", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            state.query.isBlank() -> {
+                if (state.recent.isEmpty()) {
+                    Text("输入设备名称或关键词开始查找", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    Text("最近更新", style = MaterialTheme.typography.titleMedium)
+                    state.recent.forEach { result ->
+                        SearchResultRow(
+                            result = result,
+                            onClick = {
+                                when (result.type) {
+                                    SearchRecordType.FAULT -> onFaultDetail(result.id)
+                                    SearchRecordType.WORK_LOG -> onWorkLogDetail(result.id)
+                                    SearchRecordType.HANDOVER -> onHandoverDetail(result.id)
+                                }
+                            },
+                        )
+                    }
+                }
+            }
             state.loading && state.results.isEmpty() -> Text("正在查找…", color = MaterialTheme.colorScheme.onSurfaceVariant)
             state.error != null -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(state.error!!, color = MaterialTheme.colorScheme.error)

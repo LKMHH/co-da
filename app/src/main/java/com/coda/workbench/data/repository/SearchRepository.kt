@@ -48,6 +48,46 @@ class SearchRepository(
         return results.sortedByDescending { it.sortTime }
     }
 
+    /** 空查询时的「最近更新」（UI 稿 §9）：三类记录按 updatedAt 合并取最近 N 条。 */
+    suspend fun recent(limit: Int = 10): List<SearchResult> {
+        val results = mutableListOf<SearchResult>()
+        database.workLogDao().recent(limit).filter { it.voidedAt == null }.forEach { log ->
+            results += SearchResult(
+                type = SearchRecordType.WORK_LOG,
+                id = log.id,
+                title = log.deviceNameSnapshot ?: "普通工作",
+                snippet = log.content,
+                statusText = if (log.voidedAt == null) "已记录" else "已作废",
+                sortTime = log.updatedAt,
+                expandedMatch = false,
+            )
+        }
+        database.faultRecordDao().recent(limit).forEach { fault ->
+            val latest = fault.lastProcessingId?.let { database.faultProcessingDao().findById(it) }
+            results += SearchResult(
+                type = SearchRecordType.FAULT,
+                id = fault.id,
+                title = fault.deviceNameSnapshot,
+                snippet = fault.symptom,
+                statusText = faultStatusText(fault, latest),
+                sortTime = fault.updatedAt,
+                expandedMatch = false,
+            )
+        }
+        database.handoverItemDao().recent(limit).forEach { item ->
+            results += SearchResult(
+                type = SearchRecordType.HANDOVER,
+                id = item.id,
+                title = item.summary,
+                snippet = item.nextAction,
+                statusText = if (item.voidedAt == null) handoverStatusLabel(item.status) else "已作废",
+                sortTime = item.updatedAt,
+                expandedMatch = false,
+            )
+        }
+        return results.sortedByDescending { it.sortTime }.take(limit)
+    }
+
     private suspend fun collectAliasIds(likeTerms: List<String>): List<String> {
         val ids = mutableListOf<String>()
         for (term in likeTerms) {

@@ -29,6 +29,7 @@ data class SearchUiState(
     val attendanceKinds: Set<String> = emptySet(),
     val includeVoided: Boolean = false,
     val results: List<SearchResult> = emptyList(),
+    val recent: List<SearchResult> = emptyList(),
     val loading: Boolean = false,
     val searched: Boolean = false,
     val error: String? = null,
@@ -45,11 +46,24 @@ class SearchViewModel @Inject constructor(
 
     private var queryJob: Job? = null
 
+    init {
+        loadRecent()
+    }
+
+    private fun loadRecent() {
+        viewModelScope.launch {
+            runCatching { useCase.recent().first() }
+                .onSuccess { _state.value = _state.value.copy(recent = it) }
+                .onFailure { /* 最近更新加载失败不阻塞输入 */ }
+        }
+    }
+
     fun setQuery(value: String) {
         _state.value = _state.value.copy(query = value, error = null)
         queryJob?.cancel()
         if (value.isBlank()) {
             _state.value = _state.value.copy(results = emptyList(), loading = false, searched = false)
+            loadRecent()
             return
         }
         _state.value = _state.value.copy(loading = true)
@@ -106,6 +120,7 @@ class SearchViewModel @Inject constructor(
         val current = _state.value
         if (current.query.isBlank()) {
             _state.value = current.copy(results = emptyList(), loading = false, searched = false)
+            loadRecent()
             return
         }
         _state.value = current.copy(loading = true, error = null)

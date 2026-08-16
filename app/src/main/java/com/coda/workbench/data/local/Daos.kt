@@ -338,6 +338,9 @@ interface HandoverItemDao {
     @Query("SELECT * FROM handover_item WHERE status IN ('COMPLETED','CANCELED') ORDER BY updatedAt DESC")
     suspend fun finishedIncludingVoided(): List<HandoverItemEntity>
 
+    @Query("SELECT * FROM handover_item WHERE voidedAt IS NULL ORDER BY updatedAt DESC LIMIT :limit")
+    suspend fun recent(limit: Int): List<HandoverItemEntity>
+
     // ---- M5 本地通知 ----
     @Query(
         "SELECT * FROM handover_item WHERE voidedAt IS NULL " +

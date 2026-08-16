@@ -148,6 +148,21 @@ class SearchUseCaseTest {
 
     // ---- 数据准备 ----
 
+    @Test
+    fun recentReturnsMergedRecentRecordsAcrossTypes() = runBlocking {
+        val recent = repository!!.recent(limit = 10)
+
+        assertTrue(recent.isNotEmpty())
+        val ids = recent.map { it.id }.toSet()
+        assertTrue(ids.contains("work-1"))
+        assertTrue(ids.contains("fault-1"))
+        assertTrue(ids.contains("handover-1"))
+        // 按 updatedAt 倒序
+        assertEquals(recent.sortedByDescending { it.sortTime }, recent)
+        // 默认不出现已作废（seed 中无作废数据，此处仅验证状态文案口径）
+        assertTrue(recent.none { it.statusText == "已作废" })
+    }
+
     private suspend fun seedData() {
         val db = database!!
         db.deviceDao().insert(DeviceEntity("device-1", "1号雷达", "1号雷达", true, 1L, 1L))

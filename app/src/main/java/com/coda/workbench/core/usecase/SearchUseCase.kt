@@ -11,4 +11,9 @@ class SearchUseCase(private val repository: SearchRepository) {
     fun search(query: String, filters: SearchFilters): Flow<List<SearchResult>> = flow {
         emit(repository.search(query, filters))
     }
+
+    /** 空查询时的「最近更新」列表（UI 稿 §9）。 */
+    fun recent(limit: Int = 10): Flow<List<SearchResult>> = flow {
+        emit(repository.recent(limit))
+    }
 }
