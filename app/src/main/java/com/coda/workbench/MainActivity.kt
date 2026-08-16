@@ -1203,7 +1203,7 @@ private fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { aboutDialog = false },
             title = { Text("关于 CODA") },
-            text = { Text("CODA 现场工作助手 MVP 0.1.0\n个人离线记录工具，不替代停送电、验电、LOTO、作业票与现场安全制度") },
+            text = { Text("CODA 现场工作助手 MVP ${BuildConfig.VERSION_NAME}\n个人离线记录工具，不替代停送电、验电、LOTO、作业票与现场安全制度") },
             confirmButton = { TextButton(onClick = { aboutDialog = false }) { Text("知道了") } },
         )
     }
@@ -1323,7 +1323,12 @@ private fun DeviceListScreen(modifier: Modifier, onDeviceDetail: (String) -> Uni
         AlertDialog(
             onDismissRequest = { addDialog = false },
             title = { Text("添加设备") },
-            text = { OutlinedTextField(newName, { newName = it }, label = { Text("设备名称") }, singleLine = true) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(newName, { newName = it }, label = { Text("设备名称") }, singleLine = true)
+                    viewModel.state.value.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
+                }
+            },
             confirmButton = {
                 CodaButton(onClick = { scope.launch { viewModel.create(newName) { addDialog = false; newName = "" } } }, enabled = newName.isNotBlank() && !viewModel.state.value.busy) { Text("添加") }
             },
