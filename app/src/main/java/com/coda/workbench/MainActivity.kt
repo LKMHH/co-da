@@ -1128,7 +1128,7 @@ private fun WorkLogDetailScreen(
             log.workResult?.takeIf { it.isNotBlank() }?.let { Text("工作结果：$it") }
             log.area?.takeIf { it.isNotBlank() }?.let { Text("区域：$it") }
             log.deviceNameSnapshot?.takeIf { it.isNotBlank() }?.let { Text("设备：$it") }
-            log.arrangementSource?.takeIf { it.isNotBlank() }?.let { Text("安排来源：$it") }
+            log.arrangementSource?.takeIf { it.isNotBlank() }?.let { Text("安排来源：${arrangementSourceLabel(it)}") }
             log.attendanceKindSnapshot?.let { Text("出勤：${attendanceKindLabel(it)}") }
             log.restoreResult?.let { Text("恢复结果：${restoreLabel(RestoreResult.valueOf(it))}") }
             if (log.kind == "FAULT_DERIVED") {
@@ -1496,6 +1496,13 @@ private fun restoreLabel(result: RestoreResult): String = when (result) { Restor
 private fun formatEpochMillis(millis: Long): String =
     Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault())
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.SIMPLIFIED_CHINESE))
+
+/** 安排来源枚举的中文展示（避免 MANUAL/FAULT_PROCESSING 泄漏到界面）。 */
+private fun arrangementSourceLabel(source: String): String = when (source) {
+    "MANUAL" -> "手动记录"
+    "FAULT_PROCESSING" -> "故障处理"
+    else -> source
+}
 private fun attendanceKindLabel(kind: String): String = when (kind) { "TOP_DAY" -> "顶班（日）"; "TOP_NIGHT" -> "顶班（夜）"; "CUSTOM" -> "自定义出勤"; else -> "普通班 08:00-18:00" }
 
 /** 首页出勤卡片：显示当前出勤的真实类型、班组与实际起止时间（出勤修正后可见变化）。 */
